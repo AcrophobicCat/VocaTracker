@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VocaTracker - ボカロアナリティクス＆レーダー</title>
+  <title>VocaTracker</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -422,14 +422,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
-    // TODO: ご自身のFirebaseコンソールから取得した設定値に書き換えてください
+    // 正しいFirebase設定値
     const firebaseConfig = {
-      apiKey: "AIzaSyYourApiKey...",
-      authDomain: "your-project.firebaseapp.com",
-      projectId: "your-project",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcdef"
+      apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+      authDomain: "vocaloid-song-trackar.firebaseapp.com",
+      projectId: "youtube-vocaloid-song-trackar",
+      storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+      messagingSenderId: "543125801305",
+      appId: "1:543125801305:web:cff40ef5228fd3a35f6448",
+      measurementId: "G-HJQ7W6VXGT"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -545,7 +546,6 @@
       localStorage.setItem('vocaloid_tracker_songs_v3', JSON.stringify(songs));
     }
 
-    // Firebase Auth Login Handler
     async function handleFirebaseLogin(e) {
       e.preventDefault();
       const email = document.getElementById('adminEmailInput').value;
@@ -624,8 +624,11 @@
 
     function handleSearch(query) {
       const q = query.trim().toLowerCase();
+      const resultsSection = document.getElementById('searchResultSection');
+      const container = document.getElementById('searchResultsContainer');
+
       if (!q) {
-        document.getElementById('searchResultSection').classList.add('hidden');
+        resultsSection.classList.add('hidden');
         return;
       }
 
@@ -636,9 +639,8 @@
         (s.tags && s.tags.some(t => t.toLowerCase().includes(q)))
       );
 
-      const container = document.getElementById('searchResultsContainer');
-      container.innerHTML = filtered.map(s => renderSongCard(s)).join('');
-      document.getElementById('searchResultSection').classList.remove('hidden');
+      resultsSection.classList.remove('hidden');
+      container.innerHTML = filtered.length > 0 ? filtered.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400 col-span-full">該当する楽曲が見つかりませんでした。</p>';
       lucide.createIcons();
     }
 
@@ -647,203 +649,185 @@
       document.getElementById('searchResultSection').classList.add('hidden');
     }
 
-    function addTagToCurrentSong() {
-      if (!currentDetailVideoId) return;
-      const input = document.getElementById('newTagInput');
-      const tagText = input.value.trim();
-      if (!tagText) return;
-
-      const s = songs.find(x => x.video_id === currentDetailVideoId);
-      if (!s) return;
-
-      if (!s.tags) s.tags = [];
-      const sanitizedTag = escapeHTML(tagText.slice(0, 20));
-      
-      if (!s.tags.includes(sanitizedTag)) {
-        s.tags.push(sanitizedTag);
-        saveToStorage();
-        renderAll();
-        openSongDetail(currentDetailVideoId);
-        input.value = '';
-      } else {
-        alert('すでに同じタグが存在します。');
-      }
-    }
-
-    function renderAll() {
-      const featured = songs.slice(0, 3);
-      document.getElementById('featuredContainer').innerHTML = featured.map(s => `
-        <div onclick="openSongDetail('${s.video_id}')" class="min-w-[240px] max-w-[240px] bg-slate-800/95 border border-slate-700/80 hover:border-cyan-500/60 rounded-xl p-3 cursor-pointer transition flex-shrink-0">
-          <img src="https://img.youtube.com/vi/${s.video_id}/hqdefault.jpg" class="w-full h-28 object-cover rounded-lg mb-2">
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">${escapeHTML(s.buzz_status || 'PICKUP')}</span>
-          <h4 class="font-bold text-sm text-white truncate mt-1">${escapeHTML(s.clean_title || s.title)}</h4>
-          <p class="text-xs text-slate-400 truncate">${escapeHTML(s.producer)}</p>
-        </div>
-      `).join('');
-
-      document.getElementById('trueBuzzContainer').innerHTML = songs.filter(s => s.category === 'truebuzz' || s.mr >= 1.2).map(s => renderSongCard(s)).join('');
-      document.getElementById('newReleaseContainer').innerHTML = songs.filter(s => s.category === 'newrelease' || s.video_age_days <= 14).map(s => renderSongCard(s)).join('');
-
-      document.getElementById('forecastContainer').innerHTML = songs.filter(s => s.target_views && s.views < s.target_views).map(s => {
-        const pct = Math.min(100, Math.round((s.views / s.target_views) * 100));
-        return `
-          <div onclick="openSongDetail('${s.video_id}')" class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 cursor-pointer hover:border-purple-500/60 transition space-y-3">
-            <div class="flex items-center gap-3">
-              <img src="https://img.youtube.com/vi/${s.video_id}/hqdefault.jpg" class="w-20 h-14 object-cover rounded-lg">
-              <div class="overflow-hidden">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">TARGET: ${escapeHTML(s.target_milestone)}</span>
-                <h3 class="font-bold text-white text-sm truncate mt-1">${escapeHTML(s.clean_title || s.title)}</h3>
-                <p class="text-xs text-slate-400 truncate">${escapeHTML(s.producer)}</p>
-              </div>
-            </div>
-            <div class="space-y-1">
-              <div class="flex justify-between text-xs text-slate-400">
-                <span>進捗率 (${pct}%)</span>
-                <span class="text-purple-300 font-bold">あと約 ${s.estimated_days} 日</span>
-              </div>
-              <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-700">
-                <div class="bg-gradient-to-r from-purple-500 to-cyan-400 h-full rounded-full" style="width: ${pct}%"></div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      document.getElementById('archiveContainer').innerHTML = songs.filter(s => s.milestone_achieved).map(s => `
-        <div onclick="openSongDetail('${s.video_id}')" class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 cursor-pointer hover:border-yellow-500/60 transition space-y-3">
-          <div class="flex items-center gap-3">
-            <img src="https://img.youtube.com/vi/${s.video_id}/hqdefault.jpg" class="w-20 h-14 object-cover rounded-lg">
-            <div class="overflow-hidden">
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400">${escapeHTML(s.milestone_achieved)}</span>
-              <h3 class="font-bold text-white text-sm truncate mt-1">${escapeHTML(s.clean_title || s.title)}</h3>
-              <p class="text-xs text-slate-400 truncate">${escapeHTML(s.producer)}</p>
-            </div>
-          </div>
-          <p class="text-xs text-slate-400 font-mono">現在再生数: <b class="text-white">${s.views.toLocaleString()}</b> 回</p>
-        </div>
-      `).join('');
-
-      const top100Songs = [...songs].sort((a, b) => b.views - a.views).slice(0, 100);
-      document.getElementById('rankingTableBody').innerHTML = top100Songs.map((s, idx) => `
-        <tr class="hover:bg-slate-800/50 transition">
-          <td class="p-3 text-center font-bold ${idx < 3 ? 'text-yellow-400' : 'text-slate-400'}">${idx + 1}</td>
-          <td class="p-3">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="openSongDetail('${s.video_id}')">
-              <img src="https://img.youtube.com/vi/${s.video_id}/hqdefault.jpg" class="w-12 h-8 object-cover rounded">
-              <span class="font-semibold text-white hover:text-cyan-400 truncate max-w-xs">${escapeHTML(s.clean_title || s.title)}</span>
-            </div>
-          </td>
-          <td class="p-3 text-cyan-400 hover:underline cursor-pointer" onclick="openProducerDetail('${escapeHTML(s.producer)}')">${escapeHTML(s.producer)}</td>
-          <td class="p-3 text-right font-mono font-bold text-white">${s.views.toLocaleString()}</td>
-          <td class="p-3 text-right font-mono text-emerald-400">+${s.increase_24h.toLocaleString()}</td>
-          <td class="p-3 text-center admin-only ${isAdmin ? '' : 'hidden'}">
-            <button onclick="openEditModal('${s.video_id}')" class="p-1 text-slate-400 hover:text-cyan-400">
-              <i data-lucide="edit-3" class="w-4 h-4"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-
-      lucide.createIcons();
-    }
-
-    function renderSongCard(s) {
-      const tagsHtml = (s.tags || []).map(t => `<span class="bg-slate-900 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-700">#${escapeHTML(t)}</span>`).join('');
+    function createSongCardHTML(song) {
       return `
-        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between hover:border-slate-600 transition space-y-3">
-          <div class="space-y-2">
-            <div class="relative cursor-pointer" onclick="openSongDetail('${s.video_id}')">
-              <img src="https://img.youtube.com/vi/${s.video_id}/hqdefault.jpg" class="w-full h-36 object-cover rounded-lg">
-              <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded bg-black/70 text-cyan-400 backdrop-blur">
-                ${escapeHTML(s.buzz_status || '注目')}
-              </span>
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-cyan-500/40 transition">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-400">${escapeHTML(song.buzz_status || '通常')}</span>
+              <span class="text-xs text-slate-400">${song.views.toLocaleString()}回再生</span>
             </div>
-            <div>
-              <h3 onclick="openSongDetail('${s.video_id}')" class="font-bold text-white text-base leading-snug cursor-pointer hover:text-cyan-400 truncate">
-                ${escapeHTML(s.clean_title || s.title)}
-              </h3>
-              <p onclick="openProducerDetail('${escapeHTML(s.producer)}')" class="text-xs text-cyan-400 font-medium cursor-pointer hover:underline mt-0.5">
-                ${escapeHTML(s.producer)}
-              </p>
-            </div>
+            <h4 onclick="openSongDetail('${song.video_id}')" class="font-bold text-sm text-white hover:text-cyan-400 cursor-pointer line-clamp-1">${escapeHTML(song.title)}</h4>
+            <p onclick="openProducerDetail('${escapeHTML(song.producer)}')" class="text-xs text-cyan-400 cursor-pointer hover:underline">${escapeHTML(song.producer)}</p>
           </div>
-          <div class="flex flex-wrap gap-1">${tagsHtml}</div>
-          <div class="space-y-2 pt-2 border-t border-slate-700/50">
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <span class="text-slate-500 block text-[10px]">累計再生数</span>
-                <span class="font-mono font-bold text-slate-200">${s.views.toLocaleString()}</span>
-              </div>
-              <div>
-                <span class="text-slate-500 block text-[10px]">24h増加</span>
-                <span class="font-mono font-bold text-emerald-400">+${s.increase_24h.toLocaleString()}</span>
-              </div>
-            </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-700/50 text-xs text-slate-400">
+            <span>24h: +${(song.increase_24h || 0).toLocaleString()}</span>
+            <button onclick="openSongDetail('${song.video_id}')" class="text-cyan-400 hover:underline">詳細・グラフ</button>
           </div>
         </div>
       `;
     }
 
-    function openSongDetail(videoId) {
-      currentDetailVideoId = videoId;
-      const s = songs.find(x => x.video_id === videoId);
-      if (!s) return;
-
-      document.getElementById('detailThumb').src = `https://img.youtube.com/vi/${s.video_id}/hqdefault.jpg`;
-      document.getElementById('detailCategoryBadge').innerText = s.buzz_status || '解析楽曲';
-      document.getElementById('detailTitle').innerText = s.clean_title || s.title;
-      document.getElementById('detailProducer').innerText = s.producer;
-      document.getElementById('detailProducer').onclick = () => openProducerDetail(s.producer);
-      document.getElementById('detailAge').innerText = `経過日数: ${s.video_age_days}日`;
-      document.getElementById('detailLikeRate').innerText = `いいね率: ${s.like_rate}%`;
-      
-      document.getElementById('detailVocal').innerText = s.vocal || '未設定';
-      document.getElementById('detailMV').innerText = s.mv_creator || '未設定';
-      document.getElementById('detailMR').innerText = s.mr;
-      document.getElementById('detailIncrease').innerText = `+${s.increase_24h.toLocaleString()}`;
-
-      const tagsContainer = document.getElementById('detailTagsContainer');
-      if (s.tags && s.tags.length > 0) {
-        tagsContainer.innerHTML = s.tags.map(t => `<span class="bg-slate-800 text-cyan-300 text-xs px-2.5 py-1 rounded-full border border-slate-700">#${escapeHTML(t)}</span>`).join('');
-      } else {
-        tagsContainer.innerHTML = '<span class="text-xs text-slate-500">タグはまだありません</span>';
+    function renderAll() {
+      // Home Featured
+      const featuredContainer = document.getElementById('featuredContainer');
+      if(featuredContainer) {
+        featuredContainer.innerHTML = songs.slice(0, 3).map(s => `
+          <div onclick="openSongDetail('${s.video_id}')" class="min-w-[260px] max-w-[260px] bg-slate-800/90 border border-slate-700/70 rounded-xl p-3 cursor-pointer hover:border-cyan-500 transition space-y-2">
+            <div class="text-xs font-bold text-cyan-400">${escapeHTML(s.buzz_status)}</div>
+            <div class="font-bold text-sm text-white line-clamp-1">${escapeHTML(s.title)}</div>
+            <div class="text-xs text-slate-400">P名: ${escapeHTML(s.producer)}</div>
+            <div class="text-xs text-slate-300 font-semibold">${s.views.toLocaleString()}回再生</div>
+          </div>
+        `).join('');
       }
 
-      document.getElementById('detailYTLink').href = `https://www.youtube.com/watch?v=${s.video_id}`;
-      
-      const editBtn = document.getElementById('detailEditBtn');
-      if (isAdmin) {
-        editBtn.classList.remove('hidden');
-        editBtn.onclick = () => openEditModal(s.video_id);
-      } else {
-        editBtn.classList.add('hidden');
+      // True Buzz
+      const trueBuzz = document.getElementById('trueBuzzContainer');
+      if(trueBuzz) {
+        const list = songs.filter(s => s.category === 'truebuzz');
+        trueBuzz.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
       }
 
-      renderViewsChart(s.history_views || [s.views * 0.7, s.views * 0.8, s.views * 0.9, s.views]);
-      openModal('songDetailModal');
+      // New Release
+      const newRelease = document.getElementById('newReleaseContainer');
+      if(newRelease) {
+        const list = songs.filter(s => s.category === 'newrelease');
+        newRelease.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
+      }
+
+      // Forecast
+      const forecast = document.getElementById('forecastContainer');
+      if(forecast) {
+        forecast.innerHTML = songs.map(s => `
+          <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
+            <div class="text-xs text-purple-400 font-bold">🎯 目標: ${escapeHTML(s.target_milestone)}</div>
+            <h4 onclick="openSongDetail('${s.video_id}')" class="font-bold text-sm text-white cursor-pointer hover:text-cyan-400 line-clamp-1">${escapeHTML(s.title)}</h4>
+            <div class="text-xs text-slate-400">現在の再生数: ${s.views.toLocaleString()}回</div>
+            <div class="text-xs text-slate-300">推計到達まで: あと約 <span class="text-cyan-400 font-bold">${s.estimated_days}</span> 日</div>
+          </div>
+        `).join('');
+      }
+
+      // Archive
+      const archive = document.getElementById('archiveContainer');
+      if(archive) {
+        const list = songs.filter(s => s.milestone_achieved);
+        archive.innerHTML = list.length ? list.map(s => `
+          <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
+            <div class="text-xs text-yellow-400 font-bold">${escapeHTML(s.milestone_achieved)}</div>
+            <h4 onclick="openSongDetail('${s.video_id}')" class="font-bold text-sm text-white cursor-pointer hover:text-cyan-400 line-clamp-1">${escapeHTML(s.title)}</h4>
+            <div class="text-xs text-slate-400">ボカロP: ${escapeHTML(s.producer)}</div>
+            <div class="text-xs text-slate-300">最終再生数: ${s.views.toLocaleString()}回</div>
+          </div>
+        `).join('') : '<p class="text-xs text-slate-400">アーカイブ記録はありません。</p>';
+      }
+
+      // Ranking Top 100
+      const rankingBody = document.getElementById('rankingTableBody');
+      if(rankingBody) {
+        const sorted = [...songs].sort((a, b) => b.views - a.views);
+        rankingBody.innerHTML = sorted.map((s, idx) => `
+          <tr class="hover:bg-slate-700/30 transition">
+            <td class="p-3 text-center font-bold text-slate-400">${idx + 1}</td>
+            <td class="p-3">
+              <span onclick="openSongDetail('${s.video_id}')" class="font-medium text-white hover:text-cyan-400 cursor-pointer">${escapeHTML(s.title)}</span>
+            </td>
+            <td class="p-3 text-slate-300">${escapeHTML(s.producer)}</td>
+            <td class="p-3 text-right font-semibold text-cyan-400">${s.views.toLocaleString()}</td>
+            <td class="p-3 text-right text-slate-300">+${(s.increase_24h || 0).toLocaleString()}</td>
+            <td class="p-3 text-center admin-only hidden">
+              <button onclick="openEditModal('${s.video_id}')" class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-slate-200">編集</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
       lucide.createIcons();
     }
 
-    function renderViewsChart(viewsArray) {
+    function openSongDetail(videoId) {
+      const song = songs.find(s => s.video_id === videoId);
+      if (!song) return;
+      currentDetailVideoId = videoId;
+
+      document.getElementById('detailThumb').src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+      document.getElementById('detailCategoryBadge').innerText = song.buzz_status || '楽曲詳細';
+      document.getElementById('detailTitle').innerText = song.title;
+      const prodEl = document.getElementById('detailProducer');
+      prodEl.innerText = song.producer;
+      prodEl.onclick = () => { closeModal('songDetailModal'); openProducerDetail(song.producer); };
+
+      document.getElementById('detailAge').innerText = `経過日数: ${song.video_age_days || '--'}日`;
+      document.getElementById('detailLikeRate').innerText = `いいね率: ${song.like_rate || '--'}%`;
+      document.getElementById('detailVocal').innerText = song.vocal || '未設定';
+      document.getElementById('detailMV').innerText = song.mv_creator || '未設定';
+      document.getElementById('detailMR').innerText = song.mr || '--';
+      document.getElementById('detailIncrease').innerText = `+${(song.increase_24h || 0).toLocaleString()}`;
+      document.getElementById('detailYTLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+
+      const editBtn = document.getElementById('detailEditBtn');
+      editBtn.onclick = () => openEditModal(videoId);
+
+      renderDetailTags(song);
+      openModal('songDetailModal');
+      renderViewsChart(song.history_views || [song.views]);
+    }
+
+    function renderDetailTags(song) {
+      const container = document.getElementById('detailTagsContainer');
+      const tags = song.tags || [];
+      container.innerHTML = tags.length ? tags.map(t => `
+        <span class="inline-flex items-center gap-1 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-xs text-slate-300">
+          #${escapeHTML(t)}
+          ${isAdmin ? `<button onclick="removeTag('${song.video_id}', '${t}')" class="text-slate-500 hover:text-red-400">×</button>` : ''}
+        </span>
+      `).join('') : '<span class="text-xs text-slate-500">タグはまだありません</span>';
+    }
+
+    function addTagToCurrentSong() {
+      const input = document.getElementById('newTagInput');
+      const val = input.value.trim();
+      if (!val || !currentDetailVideoId) return;
+
+      const song = songs.find(s => s.video_id === currentDetailVideoId);
+      if (song) {
+        if (!song.tags) song.tags = [];
+        if (!song.tags.includes(val)) {
+          song.tags.push(val);
+          saveToStorage();
+          renderDetailTags(song);
+          renderAll();
+        }
+        input.value = '';
+      }
+    }
+
+    function removeTag(videoId, tag) {
+      const song = songs.find(s => s.video_id === videoId);
+      if (song && song.tags) {
+        song.tags = song.tags.filter(t => t !== tag);
+        saveToStorage();
+        renderDetailTags(song);
+        renderAll();
+      }
+    }
+
+    function renderViewsChart(historyViews) {
       const ctx = document.getElementById('viewsChart').getContext('2d');
       if (viewsChart) viewsChart.destroy();
-
-      const labels = viewsArray.map((_, i) => `${i + 1}日前`);
 
       viewsChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
+          labels: historyViews.map((_, i) => `-${historyViews.length - 1 - i}日前`),
           datasets: [{
             label: '累計再生数',
-            data: viewsArray,
+            data: historyViews,
             borderColor: '#06b6d4',
-            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+            backgroundColor: 'rgba(6, 182, 212, 0.1)',
             fill: true,
-            tension: 0.3,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#06b6d4'
+            tension: 0.3
           }]
         },
         options: {
@@ -851,66 +835,60 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-            y: { 
-              grid: { color: 'rgba(51, 65, 85, 0.3)' }, 
-              ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => (v / 10000).toLocaleString() + '万' } 
-            }
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } }
           }
         }
       });
     }
 
     function openProducerDetail(producerName) {
-      const pSongs = songs.filter(s => s.producer === producerName);
       document.getElementById('producerName').innerText = producerName;
-      document.getElementById('producerSongList').innerHTML = pSongs.map(s => `
-        <div onclick="openSongDetail('${s.video_id}')" class="p-2.5 bg-slate-900 border border-slate-700/60 rounded-lg flex items-center justify-between cursor-pointer hover:border-cyan-500/50 transition">
-          <span class="font-medium text-sm text-white">${escapeHTML(s.clean_title || s.title)}</span>
-          <span class="text-xs font-mono text-cyan-400">${s.views.toLocaleString()}回</span>
+      const listContainer = document.getElementById('producerSongList');
+      const prodSongs = songs.filter(s => s.producer === producerName);
+
+      listContainer.innerHTML = prodSongs.length ? prodSongs.map(s => `
+        <div onclick="closeModal('producerModal'); openSongDetail('${s.video_id}')" class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:border-cyan-500 transition flex justify-between items-center text-xs">
+          <span class="font-medium text-white truncate max-w-[240px]">${escapeHTML(s.title)}</span>
+          <span class="text-cyan-400">${s.views.toLocaleString()}回</span>
         </div>
-      `).join('');
+      `).join('') : '<p class="text-xs text-slate-400">登録曲がありません。</p>';
+
       openModal('producerModal');
     }
 
     function openEditModal(videoId) {
-      if (!isAdmin) return;
-      const s = songs.find(x => x.video_id === videoId);
-      if (!s) return;
+      const song = songs.find(s => s.video_id === videoId);
+      if (!song) return;
 
-      document.getElementById('editVideoId').value = s.video_id;
-      document.getElementById('editTitleInput').value = s.clean_title || s.title;
-      document.getElementById('editProducerInput').value = s.producer;
-      document.getElementById('editVocalInput').value = s.vocal || '';
-      document.getElementById('editMVInput').value = s.mv_creator || '';
+      document.getElementById('editVideoId').value = videoId;
+      document.getElementById('editTitleInput').value = song.title;
+      document.getElementById('editProducerInput').value = song.producer;
+      document.getElementById('editVocalInput').value = song.vocal || '';
+      document.getElementById('editMVInput').value = song.mv_creator || '';
 
+      closeModal('songDetailModal');
       openModal('editModal');
     }
 
     function saveCredits(e) {
       e.preventDefault();
-      if (!isAdmin) return;
-      
       const videoId = document.getElementById('editVideoId').value;
-      const s = songs.find(x => x.video_id === videoId);
-      if (!s) return;
+      const song = songs.find(s => s.video_id === videoId);
 
-      s.clean_title = escapeHTML(document.getElementById('editTitleInput').value);
-      s.producer = escapeHTML(document.getElementById('editProducerInput').value);
-      s.vocal = escapeHTML(document.getElementById('editVocalInput').value);
-      s.mv_creator = escapeHTML(document.getElementById('editMVInput').value);
-
-      saveToStorage();
-      renderAll();
-      closeModal('editModal');
-      closeModal('songDetailModal');
-      alert('メタデータを更新しました。');
+      if (song) {
+        song.title = document.getElementById('editTitleInput').value;
+        song.producer = document.getElementById('editProducerInput').value;
+        song.vocal = document.getElementById('editVocalInput').value;
+        song.mv_creator = document.getElementById('editMVInput').value;
+        saveToStorage();
+        renderAll();
+        closeModal('editModal');
+        alert('メタデータを更新しました。');
+      }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initData();
-      switchTab('home');
-    });
+    window.onload = initData;
   </script>
 </body>
 </html>
