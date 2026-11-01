@@ -417,23 +417,24 @@
     </div>
   </div>
 
-  <!-- Firebase SDK & App Logic -->
+  <!-- Firebase SDK & App Logic (v13.1.0 認証対応版) -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
 
-    // 正しいFirebase設定値
     const firebaseConfig = {
       apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
       authDomain: "vocaloid-song-trackar.firebaseapp.com",
       projectId: "youtube-vocaloid-song-trackar",
       storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
       messagingSenderId: "543125801305",
-      appId: "1:543125801305:web:cff40ef5228fd3a35f6448",
-      measurementId: "G-HJQ7W6VXGT"
+      appId: "1:543125801305:web:7556f46309f798105f6448",
+      measurementId: "G-L6NMKP7QQQ"
     };
 
     const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
     const auth = getAuth(app);
 
     window.vocaAuth = auth;
