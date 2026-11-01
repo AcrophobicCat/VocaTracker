@@ -417,7 +417,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDK & App Logic (エラー詳細表示対応版) -->
+  <!-- Firebase SDK & 認証ロジック一体型 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
@@ -437,9 +437,32 @@
     const analytics = getAnalytics(app);
     const auth = getAuth(app);
 
-    window.vocaAuth = auth;
-    window.vocaSignIn = signInWithEmailAndPassword;
-    window.vocaSignOut = signOut;
+    // ログイン関数をモジュール内で直接定義してグローバルに登録
+    window.handleFirebaseLogin = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('adminEmailInput').value;
+      const password = document.getElementById('adminPasswordInput').value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        closeModal('adminLoginModal');
+        document.getElementById('adminEmailInput').value = '';
+        document.getElementById('adminPasswordInput').value = '';
+        alert('管理者としてログインしました。');
+      } catch (error) {
+        alert(`ログイン失敗:\nコード: ${error.code}\n内容: ${error.message}`);
+        console.error("Firebase Login Error:", error);
+      }
+    };
+
+    window.handleFirebaseSignOut = async function() {
+      try {
+        await signOut(auth);
+        alert('ログアウトしました。');
+      } catch (error) {
+        console.error("ログアウトエラー:", error);
+      }
+    };
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -547,37 +570,11 @@
       localStorage.setItem('vocaloid_tracker_songs_v3', JSON.stringify(songs));
     }
 
-    // ★ ログインエラーの詳細を画面に表示するように改良した関数
-    async function handleFirebaseLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('adminEmailInput').value;
-      const password = document.getElementById('adminPasswordInput').value;
-
-      try {
-        await window.vocaSignIn(window.vocaAuth, email, password);
-        closeModal('adminLoginModal');
-        document.getElementById('adminEmailInput').value = '';
-        document.getElementById('adminPasswordInput').value = '';
-        alert('管理者としてログインしました。');
-      } catch (error) {
-        // 具体的なエラーコードとメッセージをポップアップ表示
-        alert(`ログイン失敗:\nコード: ${error.code}\n内容: ${error.message}`);
-        console.error("Firebase Login Error:", error);
-      }
-    }
-
-    async function handleFirebaseSignOut() {
-      try {
-        await window.vocaSignOut(window.vocaAuth);
-        alert('ログアウトしました。');
-      } catch (error) {
-        console.error("ログアウトエラー:", error);
-      }
-    }
-
     function handleAdminButtonClick() {
       if (isAdmin) {
-        handleFirebaseSignOut();
+        if (typeof window.handleFirebaseSignOut === 'function') {
+          window.handleFirebaseSignOut();
+        }
       } else {
         openModal('adminLoginModal');
       }
@@ -605,7 +602,6 @@
         adminElements.forEach(el => el.classList.add('hidden'));
       }
     }
-    // グローバルに公開
     window.setAdminMode = setAdminMode;
 
     function switchTab(tabId) {
@@ -675,7 +671,6 @@
     }
 
     function renderAll() {
-      // Home Featured
       const featuredContainer = document.getElementById('featuredContainer');
       if(featuredContainer) {
         featuredContainer.innerHTML = songs.slice(0, 3).map(s => `
@@ -688,21 +683,18 @@
         `).join('');
       }
 
-      // True Buzz
       const trueBuzz = document.getElementById('trueBuzzContainer');
       if(trueBuzz) {
         const list = songs.filter(s => s.category === 'truebuzz');
         trueBuzz.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
       }
 
-      // New Release
       const newRelease = document.getElementById('newReleaseContainer');
       if(newRelease) {
         const list = songs.filter(s => s.category === 'newrelease');
         newRelease.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
       }
 
-      // Forecast
       const forecast = document.getElementById('forecastContainer');
       if(forecast) {
         forecast.innerHTML = songs.map(s => `
@@ -715,7 +707,6 @@
         `).join('');
       }
 
-      // Archive
       const archive = document.getElementById('archiveContainer');
       if(archive) {
         const list = songs.filter(s => s.milestone_achieved);
@@ -729,7 +720,6 @@
         `).join('') : '<p class="text-xs text-slate-400">アーカイブ記録はありません。</p>';
       }
 
-      // Ranking Top 100
       const rankingBody = document.getElementById('rankingTableBody');
       if(rankingBody) {
         const sorted = [...songs].sort((a, b) => b.views - a.views);
