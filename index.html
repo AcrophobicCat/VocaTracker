@@ -417,7 +417,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDK & App Logic (v13.1.0 認証対応版) -->
+  <!-- Firebase SDK & App Logic (エラー詳細表示対応版) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
@@ -443,9 +443,9 @@
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        setAdminMode(true);
+        if (typeof window.setAdminMode === 'function') window.setAdminMode(true);
       } else {
-        setAdminMode(false);
+        if (typeof window.setAdminMode === 'function') window.setAdminMode(false);
       }
     });
   </script>
@@ -547,6 +547,7 @@
       localStorage.setItem('vocaloid_tracker_songs_v3', JSON.stringify(songs));
     }
 
+    // ★ ログインエラーの詳細を画面に表示するように改良した関数
     async function handleFirebaseLogin(e) {
       e.preventDefault();
       const email = document.getElementById('adminEmailInput').value;
@@ -559,7 +560,9 @@
         document.getElementById('adminPasswordInput').value = '';
         alert('管理者としてログインしました。');
       } catch (error) {
-        alert('ログインに失敗しました。メールアドレスまたはパスワードを確認してください。');
+        // 具体的なエラーコードとメッセージをポップアップ表示
+        alert(`ログイン失敗:\nコード: ${error.code}\n内容: ${error.message}`);
+        console.error("Firebase Login Error:", error);
       }
     }
 
@@ -602,6 +605,8 @@
         adminElements.forEach(el => el.classList.add('hidden'));
       }
     }
+    // グローバルに公開
+    window.setAdminMode = setAdminMode;
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
