@@ -38,7 +38,12 @@
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         <span>トップページ（一覧）に戻る</span>
       </a>
-      <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
+      <div class="flex items-center gap-3">
+        <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
+        <button onclick="toggleAdminMode()" id="adminToggleBtn" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded border border-slate-700 transition">
+          管理者切替
+        </button>
+      </div>
     </div>
   </header>
 
@@ -53,11 +58,25 @@
           <span id="videoIdDisplay" class="text-xs text-slate-500 font-mono">ID: ---</span>
         </div>
 
-        <div>
-          <h1 id="songTitle" class="text-xl md:text-2xl font-extrabold text-white leading-snug">読み込み中...</h1>
+        <!-- タイトル表示 ＆ 編集エリア -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-3">
+            <h1 id="songTitle" class="text-xl md:text-2xl font-extrabold text-white leading-snug">読み込み中...</h1>
+            <!-- 管理者モード時のみ表示される編集ボタン -->
+            <button id="editTitleBtn" onclick="enableTitleEdit()" class="hidden bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs px-3 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 shrink-0">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
+            </button>
+          </div>
+
+          <!-- インライン編集用フォーム（初期非表示） -->
+          <div id="editTitleContainer" class="hidden flex gap-2 max-w-lg">
+            <input type="text" id="editTitleInput" class="bg-slate-800 border border-cyan-500 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none w-full">
+            <button onclick="saveCustomTitle()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-4 py-1.5 rounded-lg font-medium whitespace-nowrap">保存</button>
+            <button onclick="cancelTitleEdit()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs px-3 py-1.5 rounded-lg whitespace-nowrap">キャンセル</button>
+          </div>
         </div>
 
-        <p class="text-sm text-cyan-400 font-medium">ボカロP: <span id="songProducer" class="underline cursor-pointer">---</span></p>
+        <p class="text-sm text-cyan-400 font-medium">ボカロP: <span id="songProducer" class="underline">---</span></p>
       </div>
 
       <div class="flex items-center gap-2">
@@ -98,7 +117,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表
+            <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表 (直近30件)
           </h3>
           <span id="tableFilterStatus" class="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded hidden"></span>
         </div>
@@ -110,10 +129,10 @@
         <table class="w-full text-left text-xs text-slate-300">
           <thead class="bg-slate-800/60 text-slate-400 uppercase sticky top-0">
             <tr>
-              <th class="p-3">確認日時</th>
-              <th class="p-3 text-right">再生数</th>
-              <th class="p-3 text-right">再生数の増加分</th>
-              <th class="p-3 text-right">高評価数</th>
+              <th class="p-3">確認日時 (updated_at)</th>
+              <th class="p-3 text-right">再生数 (views)</th>
+              <th class="p-3 text-right">増加分 (hourly_inclease)</th>
+              <th class="p-3 text-right">高評価数 (like_count)</th>
             </tr>
           </thead>
           <tbody id="logTableBody" class="divide-y divide-slate-800">
@@ -125,14 +144,15 @@
 
   </main>
 
-  <!-- Script for Rendering Charts & Table with Cross-filtering -->
+  <!-- Script for BigQuery Schema Mapping, Cross-filtering & Custom Title Protection -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = urlParams.get('id');
 
-    let currentSongData = null;
+    let allLogsForSong = [];
     let viewsChartInstance = null;
     let dailyBarChartInstance = null;
+    let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
 
     function initSongPage() {
       if (!videoId) {
@@ -140,53 +160,106 @@
         return;
       }
 
-      const songs = JSON.parse(localStorage.getItem('vocaloid_tracker_songs_v3')) || [];
-      const song = songs.find(s => s.video_id === videoId) || {
-        video_id: videoId,
-        title: 'サンプル楽曲タイトル',
-        producer: 'サンプルP',
-        views: 230035917,
-        history_dates: ['10/03', '10/08', '10/13', '10/18', '10/23', '10/28', '11/02'],
-        history_views: [224000000, 225000000, 226000000, 227000000, 228000000, 229000000, 230035917],
-        daily_data: [
-          { date: '10/27', increase: 10000 },
-          { date: '10/28', increase: 16000 },
-          { date: '10/29', increase: 12000 },
-          { date: '10/30', increase: 14000 },
-          { date: '10/31', increase: 10000 },
-          { date: '11/01', increase: 12500 },
-          { date: '11/02', increase: 7771 }
-        ],
-        logs: [
-          { updated_at: '2026/11/02 9:00:25', date: '11/02', views: 230035917, increase: 7771, likes: 2251047 },
-          { updated_at: '2026/11/02 8:00:30', date: '11/02', views: 230028146, increase: 9454, likes: 2251023 },
-          { updated_at: '2026/11/02 7:00:40', date: '11/02', views: 230018692, increase: 7481, likes: 2250979 },
-          { updated_at: '2026/11/02 6:00:14', date: '11/02', views: 230011211, increase: 6892, likes: 2250946 },
-          { updated_at: '2026/11/02 5:00:18', date: '11/02', views: 230004319, increase: 7588, likes: 2250905 },
-          { updated_at: '2026/11/01 23:00:00', date: '11/01', views: 229950000, increase: 5000, likes: 2250000 },
-          { updated_at: '2026/11/01 12:00:00', date: '11/01', views: 229920000, increase: 6000, likes: 2249000 },
-          { updated_at: '2026/10/31 12:00:00', date: '10/31', views: 229850000, increase: 10000, likes: 2248000 },
-          { updated_at: '2026/10/30 12:00:00', date: '10/30', views: 229750000, increase: 14000, likes: 2247000 },
-          { updated_at: '2026/10/29 12:00:00', date: '10/29', views: 229600000, increase: 12000, likes: 2246000 },
-          { updated_at: '2026/10/28 12:00:00', date: '10/28', views: 229450000, increase: 16000, likes: 2245000 },
-          { updated_at: '2026/10/27 12:00:00', date: '10/27', views: 229300000, increase: 10000, likes: 2244000 }
-        ]
-      };
+      updateAdminUI();
 
-      currentSongData = song;
+      // BigQueryの t_hourly_logs_30d 相当の全ログ配列を取得
+      const allLogs = JSON.parse(localStorage.getItem('vocaloid_tracker_logs_30d')) || getSampleLogs(videoId);
 
-      document.getElementById('songTitle').innerText = song.title || `動画ID: ${videoId}`;
-      document.getElementById('songProducer').innerText = song.producer || '不明なP';
-      document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
-      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-      if (song.buzz_status) {
-        document.getElementById('songStatusBadge').innerText = song.buzz_status;
+      allLogsForSong = allLogs
+        .filter(log => log.video_id === videoId)
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+      if (allLogsForSong.length === 0) {
+        document.getElementById('songTitle').innerText = `動画ID: ${videoId} のデータが見つかりません`;
+        document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
+        document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+        return;
       }
 
-      // 初期描画（全データ、表は直近30個に制限）
-      renderViewsChart(song.history_dates, song.history_views);
-      renderDailyBarChart(song.daily_data);
-      renderLogTable(song.logs.slice(0, 30));
+      const latest = allLogsForSong[0];
+      
+      // 【タイトル保護ロジック】BigQuery由来のタイトルではなく、ユーザーがカスタム編集したタイトルがあれば優先する
+      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+      const displayTitle = customTitles[videoId] || latest.title || `動画ID: ${videoId}`;
+
+      document.getElementById('songTitle').innerText = displayTitle;
+      document.getElementById('songProducer').innerText = latest.producer || '不明なP';
+      document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
+      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+
+      // グラフ用データ構築（時系列昇順）
+      const chronologicalLogs = [...allLogsForSong].reverse();
+      const labels = chronologicalLogs.map(l => l.updated_at);
+      const viewValues = chronologicalLogs.map(l => l.views);
+
+      // 日間データ集計
+      const dailyMap = {};
+      chronologicalLogs.forEach(l => {
+        const dayStr = l.updated_at.split(' ')[0];
+        if (!dailyMap[dayStr]) dailyMap[dayStr] = 0;
+        dailyMap[dayStr] += (l.hourly_inclease || 0);
+      });
+      const dailyLabels = Object.keys(dailyMap);
+      const dailyValues = Object.values(dailyMap);
+
+      // 描画
+      renderViewsChart(labels, viewValues);
+      renderDailyBarChart(dailyLabels, dailyValues, chronologicalLogs);
+      renderLogTable(allLogsForSong.slice(0, 30)); // 直近30件制限
+    }
+
+    // 管理者モードの切り替え (デモ用：ボタンでON/OFF可能)
+    function toggleAdminMode() {
+      isAdminMode = !isAdminMode;
+      localStorage.setItem('voca_admin_mode', isAdminMode);
+      updateAdminUI();
+    }
+
+    function updateAdminUI() {
+      const indicator = document.getElementById('adminStatusIndicator');
+      const editBtn = document.getElementById('editTitleBtn');
+      const toggleBtn = document.getElementById('adminToggleBtn');
+
+      if (isAdminMode) {
+        indicator.innerText = '🔓 管理者モード';
+        indicator.className = 'text-xs text-cyan-400 font-bold';
+        editBtn.classList.remove('hidden');
+        toggleBtn.innerText = '一般モードへ';
+      } else {
+        indicator.innerText = '🔒 一般閲覧モード';
+        indicator.className = 'text-xs text-slate-400';
+        editBtn.classList.add('hidden');
+        toggleBtn.innerText = '管理者切替';
+        cancelTitleEdit();
+      }
+    }
+
+    function enableTitleEdit() {
+      const currentTitle = document.getElementById('songTitle').innerText;
+      document.getElementById('editTitleInput').value = currentTitle;
+      document.getElementById('songTitle').classList.add('hidden');
+      document.getElementById('editTitleBtn').classList.add('hidden');
+      document.getElementById('editTitleContainer').classList.remove('hidden');
+    }
+
+    function cancelTitleEdit() {
+      document.getElementById('songTitle').classList.remove('hidden');
+      if (isAdminMode) document.getElementById('editTitleBtn').classList.remove('hidden');
+      document.getElementById('editTitleContainer').classList.add('hidden');
+    }
+
+    // 【カスタムタイトルの保存】BigQueryからの再読み込み上書きを防ぎつつローカルに保持
+    function saveCustomTitle() {
+      const newTitle = document.getElementById('editTitleInput').value.trim();
+      if (!newTitle) return;
+
+      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+      customTitles[videoId] = newTitle;
+      localStorage.setItem('voca_custom_titles', JSON.stringify(customTitles));
+
+      document.getElementById('songTitle').innerText = newTitle;
+      cancelTitleEdit();
+      alert('タイトルを保存しました！今後BigQueryデータを更新してもこのタイトルが維持されます。');
     }
 
     function renderViewsChart(labels, data) {
@@ -198,7 +271,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: '累計再生数',
+            label: '累計再生数 (views)',
             data: data,
             borderColor: '#06b6d4',
             backgroundColor: 'rgba(6, 182, 212, 0.1)',
@@ -218,19 +291,16 @@
       });
     }
 
-    function renderDailyBarChart(dailyData) {
+    function renderDailyBarChart(labels, data, chronologicalLogs) {
       const ctx = document.getElementById('dailyBarChart').getContext('2d');
       if (dailyBarChartInstance) dailyBarChartInstance.destroy();
-
-      const labels = dailyData.map(d => d.date);
-      const data = dailyData.map(d => d.increase);
 
       dailyBarChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
           datasets: [{
-            label: '1日の再生数',
+            label: '増加分合算',
             data: data,
             backgroundColor: '#0ea5e9',
             borderRadius: 4
@@ -243,8 +313,8 @@
           onClick: (event, elements) => {
             if (elements.length > 0) {
               const index = elements[0].index;
-              const selectedDate = labels[index];
-              filterByDate(selectedDate);
+              const selectedDay = labels[index];
+              filterByDay(selectedDay, chronologicalLogs);
             }
           },
           scales: {
@@ -255,31 +325,26 @@
       });
     }
 
-    // クロスフィルタリング処理
-    function filterByDate(dateStr) {
-      if (!currentSongData || !currentSongData.logs) return;
-
-      const filteredLogs = currentSongData.logs.filter(log => log.date === dateStr);
-
-      renderLogTable(filteredLogs.slice(0, 30));
+    // クロスフィルタリング（日別絞り込み）
+    function filterByDay(dayStr, chronologicalLogs) {
+      const filtered = allLogsForSong.filter(l => l.updated_at.startsWith(dayStr));
+      renderLogTable(filtered.slice(0, 30));
 
       const statusBadge = document.getElementById('tableFilterStatus');
-      statusBadge.innerText = `表示中: ${dateStr}`;
+      statusBadge.innerText = `表示日: ${dayStr}`;
       statusBadge.classList.remove('hidden');
       document.getElementById('resetFilterBtn').classList.remove('hidden');
 
-      if (filteredLogs.length > 0) {
-        const sortedLogs = [...filteredLogs].sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at));
-        const timeLabels = sortedLogs.map(l => l.updated_at.split(' ')[1] || l.updated_at);
-        const timeViews = sortedLogs.map(l => l.views);
-        renderViewsChart(timeLabels, timeViews);
+      const dayLogs = chronologicalLogs.filter(l => l.updated_at.startsWith(dayStr));
+      if (dayLogs.length > 0) {
+        renderViewsChart(dayLogs.map(l => l.updated_at), dayLogs.map(l => l.views));
       }
     }
 
     function resetFilter() {
-      if (!currentSongData) return;
-      renderLogTable(currentSongData.logs.slice(0, 30));
-      renderViewsChart(currentSongData.history_dates, currentSongData.history_views);
+      renderLogTable(allLogsForSong.slice(0, 30));
+      const chronologicalLogs = [...allLogsForSong].reverse();
+      renderViewsChart(chronologicalLogs.map(l => l.updated_at), chronologicalLogs.map(l => l.views));
 
       document.getElementById('tableFilterStatus').classList.add('hidden');
       document.getElementById('resetFilterBtn').classList.add('hidden');
@@ -288,17 +353,25 @@
     function renderLogTable(logs) {
       const tbody = document.getElementById('logTableBody');
       if (!logs || logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">該当するログデータはありません</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">ログデータがありません</td></tr>`;
         return;
       }
       tbody.innerHTML = logs.map(log => `
         <tr class="hover:bg-slate-800/40 transition">
           <td class="p-3 text-slate-400">${log.updated_at}</td>
-          <td class="p-3 text-right font-medium text-slate-200">${log.views.toLocaleString()}</td>
-          <td class="p-3 text-right text-cyan-400">+${log.increase.toLocaleString()}</td>
-          <td class="p-3 text-right text-slate-300">${log.likes.toLocaleString()}</td>
+          <td class="p-3 text-right font-medium text-slate-200">${(log.views || 0).toLocaleString()}</td>
+          <td class="p-3 text-right text-cyan-400">+${(log.hourly_inclease || 0).toLocaleString()}</td>
+          <td class="p-3 text-right text-slate-300">${(log.like_count || 0).toLocaleString()}</td>
         </tr>
       `).join('');
+    }
+
+    function getSampleLogs(vid) {
+      return [
+        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230035917, hourly_inclease: 7771, like_count: 2251047, updated_at: '2026/11/02 09:00:25' },
+        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230028146, hourly_inclease: 9454, like_count: 2251023, updated_at: '2026/11/02 08:00:30' },
+        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230018692, hourly_inclease: 7481, like_count: 2250979, updated_at: '2026/11/02 07:00:40' }
+      ];
     }
 
     window.onload = () => {
