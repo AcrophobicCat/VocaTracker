@@ -27,6 +27,11 @@
   </script>
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+    /* 🌟 アプリ風のグラデーションアイコン用クラス */
+    .app-icon-badge {
+      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
   </style>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
@@ -35,9 +40,12 @@
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
     <div class="max-w-5xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <a href="index.html" class="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 font-bold text-sm tracking-wide transition">
-          <i data-lucide="headphones" class="w-5 h-5 text-cyan-400"></i>
-          <span>VocaTracker</span>
+        <!-- 🌟 ご指定のアイコンデザインを反映したブランドロゴ -->
+        <a href="index.html" class="flex items-center space-x-2.5 group">
+          <div class="w-9 h-9 rounded-xl app-icon-badge flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition">
+            <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
+          </div>
+          <span class="font-extrabold text-sm sm:text-base tracking-wide text-white">VocaTracker</span>
         </a>
         <a href="index.html" class="hidden sm:inline-block text-xs text-slate-400 hover:text-white bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700/60 transition">
           ← 一覧に戻る
@@ -133,13 +141,12 @@
 
       <div class="space-y-4 text-sm">
         
-        <!-- ① 使用ボーカルタグ（管理者のみ編集可能） -->
+        <!-- ① 使用ボーカルタグ -->
         <div class="space-y-2">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs text-slate-400 w-24 shrink-0 font-bold">使用ボーカル:</span>
             <div id="vocalTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
           </div>
-          <!-- 管理者用追加フォーム -->
           <div id="vocalEditContainer" class="hidden flex items-center gap-1.5 pl-0 sm:pl-24">
             <input type="text" id="newVocalTagInput" list="vocalMasterList" placeholder="ボーカルを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-purple-500 max-w-xs w-full">
             <datalist id="vocalMasterList"></datalist>
@@ -147,13 +154,12 @@
           </div>
         </div>
 
-        <!-- ② クレジットタグ（管理者のみ編集可能） -->
+        <!-- ② クレジットタグ -->
         <div class="space-y-2 pt-2 border-t border-slate-800/80">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs text-slate-400 w-24 shrink-0 font-bold">クレジット:</span>
             <div id="creditTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
           </div>
-          <!-- 管理者用追加フォーム -->
           <div id="creditEditContainer" class="hidden flex items-center gap-1.5 pl-0 sm:pl-24">
             <input type="text" id="newCreditTagInput" list="creditMasterList" placeholder="クレジットを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 max-w-xs w-full">
             <datalist id="creditMasterList"></datalist>
@@ -161,7 +167,7 @@
           </div>
         </div>
 
-        <!-- ③ フリータグ（追加は誰でもOK、削除は管理者のみ） -->
+        <!-- ③ フリータグ -->
         <div class="space-y-2 pt-2 border-t border-slate-800/80">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs text-slate-400 w-24 shrink-0 font-bold pt-1">フリータグ:</span>
@@ -223,7 +229,7 @@
       </div>
     </div>
 
-    <!-- Historical Data Table (過去30日分表示) -->
+    <!-- Historical Data Table -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
@@ -311,10 +317,8 @@
       return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
     }
 
-    // 🌟 0:30基準で属する日付文字列（YYYY/MM/DD）を返す補助関数
     function getShiftedDayStr(dateStr) {
       const d = new Date(dateStr);
-      // 30分（30 * 60 * 1000ミリ秒）を引くことで、0:00〜0:29のデータを前日扱いにシフト
       const shifted = new Date(d.getTime() - 30 * 60 * 1000);
       const yyyy = shifted.getFullYear();
       const mm = String(shifted.getMonth() + 1).padStart(2, '0');
@@ -390,7 +394,6 @@
 
       const dailyMap = {};
       chronologicalLogs.forEach(l => {
-        // 🌟 0:30基準で日付を集計
         const dayStr = getShiftedDayStr(l.updated_at);
         if (!dailyMap[dayStr]) dailyMap[dayStr] = 0;
         dailyMap[dayStr] += (l.hourly_inclease || 0);
@@ -648,7 +651,6 @@
     }
 
     function filterByDay(dayStr, chronologicalLogs) {
-      // 🌟 0:30基準の判定に合わせたフィルター
       const filtered = allLogsForSong.filter(l => getShiftedDayStr(l.updated_at) === dayStr);
       renderLogTable(filtered);
 
