@@ -213,7 +213,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> 1日の再生数 (0:15基準)
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> 1日の再生数 (0:30基準)
           </h3>
           <span class="text-[10px] text-slate-400">※バーをクリックして絞り込み</span>
         </div>
@@ -311,6 +311,17 @@
       return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
     }
 
+    // 🌟 0:30基準で属する日付文字列（YYYY/MM/DD）を返す補助関数
+    function getShiftedDayStr(dateStr) {
+      const d = new Date(dateStr);
+      // 30分（30 * 60 * 1000ミリ秒）を引くことで、0:00〜0:29のデータを前日扱いにシフト
+      const shifted = new Date(d.getTime() - 30 * 60 * 1000);
+      const yyyy = shifted.getFullYear();
+      const mm = String(shifted.getMonth() + 1).padStart(2, '0');
+      const dd = String(shifted.getDate()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd}`;
+    }
+
     async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
@@ -379,7 +390,8 @@
 
       const dailyMap = {};
       chronologicalLogs.forEach(l => {
-        const dayStr = l.updated_at.split(' ')[0];
+        // 🌟 0:30基準で日付を集計
+        const dayStr = getShiftedDayStr(l.updated_at);
         if (!dailyMap[dayStr]) dailyMap[dayStr] = 0;
         dailyMap[dayStr] += (l.hourly_inclease || 0);
       });
@@ -389,7 +401,6 @@
       renderViewsChart(labels, viewValues);
       renderDailyBarChart(dailyLabels, dailyValues, chronologicalLogs);
       
-      // 🌟 過去30日分のデータをすべてテーブルに表示（制限なし）
       renderLogTable(allLogsForSong);
     }
 
@@ -431,21 +442,18 @@
     function renderTags() {
       const tags = getSongTags();
       
-      // ① ボーカルタグ（削除・追加は管理者のみ）
       const vContainer = document.getElementById('vocalTagsContainer');
       vContainer.innerHTML = tags.vocal.map(t => {
         let deleteBtn = isAdminMode ? `<button onclick="removeTag('vocal', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
         return `<span class="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
       }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
-      // ② クレジットタグ（削除・追加は管理者のみ）
       const cContainer = document.getElementById('creditTagsContainer');
       cContainer.innerHTML = tags.credit.map(t => {
         let deleteBtn = isAdminMode ? `<button onclick="removeTag('credit', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
         return `<span class="bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
       }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
-      // ③ フリータグ（追加は誰でもOK、削除は管理者のみ）
       const fContainer = document.getElementById('freeTagsContainer');
       fContainer.innerHTML = tags.free.map(t => {
         let deleteBtn = isAdminMode ? `<button onclick="removeTag('free', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
@@ -522,7 +530,6 @@
       const editBtn = document.getElementById('editTitleBtn');
       const editProducerBtn = document.getElementById('editProducerBtn');
       
-      // 🌟 管理者用タグ追加フォームの表示切替
       const vocalEditContainer = document.getElementById('vocalEditContainer');
       const creditEditContainer = document.getElementById('creditEditContainer');
 
@@ -641,15 +648,16 @@
     }
 
     function filterByDay(dayStr, chronologicalLogs) {
-      const filtered = allLogsForSong.filter(l => l.updated_at.startsWith(dayStr));
+      // 🌟 0:30基準の判定に合わせたフィルター
+      const filtered = allLogsForSong.filter(l => getShiftedDayStr(l.updated_at) === dayStr);
       renderLogTable(filtered);
 
       const statusBadge = document.getElementById('tableFilterStatus');
-      statusBadge.innerText = `表示日: ${dayStr}`;
+      statusBadge.innerText = `表示日(0:30基準): ${dayStr}`;
       statusBadge.classList.remove('hidden');
       document.getElementById('resetFilterBtn').classList.remove('hidden');
 
-      const dayLogs = chronologicalLogs.filter(l => l.updated_at.startsWith(dayStr));
+      const dayLogs = chronologicalLogs.filter(l => getShiftedDayStr(l.updated_at) === dayStr);
       if (dayLogs.length > 0) {
         renderViewsChart(dayLogs.map(l => l.updated_at), dayLogs.map(l => l.views));
       }
