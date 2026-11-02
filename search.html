@@ -133,39 +133,45 @@
           throw new Error();
         }
       } catch (err) {
-        rawLogs = [
-          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, like_count: 500000, published_at: '2024-04-27', updated_at: '2026/11/02 10:00:00' },
-          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, like_count: 40000, published_at: '2026-10-15', updated_at: '2026/11/02 10:00:00' }
-        ];
+        rawLogs = [];
       }
 
-      // 🌟 動画IDごとにユニーク化しつつ、各曲の最古ログ日時や最新数値を保持
+      // 🌟 動画IDごとにユニーク化し、有効な published_at を確実に抽出・パースする
       const songMap = {};
       rawLogs.forEach(log => {
         if (!log.video_id) return;
         
-        const logTime = new Date(log.updated_at || log.published_at || 0).getTime();
+        const logTime = new Date(log.updated_at || 0).getTime();
 
         if (!songMap[log.video_id]) {
-          songMap[log.video_id] = { ...log, oldest_time: logTime };
+          songMap[log.video_id] = { ...log, latest_log_time: logTime };
         } else {
-          // より新しいログであれば基本データを更新
-          if (logTime > new Date(songMap[log.video_id].updated_at || 0).getTime()) {
-            const oldest = songMap[log.video_id].oldest_time;
-            songMap[log.video_id] = { ...log, oldest_time: oldest };
-          }
-          // 最古の日時を保持
-          if (logTime < songMap[log.video_id].oldest_time) {
-            songMap[log.video_id].oldest_time = logTime;
+          // より新しいログであればデータを更新（ただし published_at が空でなければ保持）
+          if (logTime > songMap[log.video_id].latest_log_time) {
+            const currentPub = songMap[log.video_id].published_at;
+            songMap[log.video_id] = { ...log, latest_log_time: logTime };
+            if (!log.published_at && currentPub) {
+              songMap[log.video_id].published_at = currentPub;
+            }
           }
         }
       });
 
-      uniqueSongsList = Object.values(songMap).map(s => ({
-        ...s,
-        // published_at が無い場合は、保持している最古のログ日時を投稿日時としてフォールバック
-        parsed_published_at: new Date(s.published_at || s.oldest_time || 0).getTime()
-      }));
+      uniqueSongsList = Object.values(songMap).map(s => {
+        // published_at が存在すればその時間を数値化、無ければ updated_at やフォールバックを使用
+        let pubTime = 0;
+        if (s.published_at) {
+          pubTime = new Date(s.published_at).getTime();
+        }
+        if (isNaN(pubTime) || pubTime === 0) {
+          pubTime = new Date(s.updated_at || 0).getTime();
+        }
+
+        return {
+          ...s,
+          parsed_published_at: pubTime
+        };
+      });
 
       applySortAndFilter();
     }
@@ -233,11 +239,11 @@
           return (b.like_count || 0) - (a.like_count || 0);
         }
         if (sortVal === 'date_desc') {
-          // 投稿日時が新しい順
+          // 投稿日時が新しい順 (大きいタイムスタンプが先)
           return b.parsed_published_at - a.parsed_published_at;
         }
         if (sortVal === 'date_asc') {
-          // 投稿日時が古い順
+          // 投稿日時が古い順 (小さいタイムスタンプが先)
           return a.parsed_published_at - b.parsed_published_at;
         }
         return 0;
