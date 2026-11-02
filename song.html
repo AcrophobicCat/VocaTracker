@@ -252,7 +252,8 @@
     let dailyBarChartInstance = null;
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
 
-    function initSongPage() {
+    // 🌟 修正: vocaloid_tracker_logs_30d.json を fetch で非同期読み込みする仕組みに変更
+    async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
         return;
@@ -260,7 +261,22 @@
 
       updateAdminUI();
 
-      const allLogs = JSON.parse(localStorage.getItem('vocaloid_tracker_logs_30d')) || getSampleLogs(videoId);
+      let allLogs = [];
+      try {
+        const response = await fetch('vocaloid_tracker_logs_30d.json');
+        if (response.ok) {
+          allLogs = await response.json();
+          // 取得成功したらローカルストレージにもキャッシュとして保存
+          localStorage.setItem('vocaloid_tracker_logs_30d', JSON.stringify(allLogs));
+        }
+      } catch (e) {
+        console.log('JSONの非同期取得に失敗しました（ローカル環境など）。localStorageのキャッシュを使用します。', e);
+      }
+
+      // JSON取得に失敗した場合や空の場合は、localStorageやサンプルデータにフォールバック
+      if (!allLogs || allLogs.length === 0) {
+        allLogs = JSON.parse(localStorage.getItem('vocaloid_tracker_logs_30d')) || getSampleLogs(videoId);
+      }
 
       allLogsForSong = allLogs
         .filter(log => log.video_id === videoId)
