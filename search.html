@@ -6,6 +6,8 @@
   <title>楽曲検索 - VocaTracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
   <script>
     tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#0f172a', cardbg: '#1e293b' } } } }
   </script>
@@ -31,6 +33,31 @@
           <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-medium px-3 py-1 rounded-lg">検索</button>
         </div>
       </form>
+
+      <!-- PC用メニュー（中画面以上で表示） -->
+      <div class="hidden md:flex items-center gap-4">
+        <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
+        <button onclick="toggleAdminMode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          管理者切替
+        </button>
+      </div>
+
+      <!-- スマホ用ハンバーガーボタン（小画面で表示） -->
+      <div class="md:hidden flex items-center">
+        <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-1.5 rounded-lg bg-slate-800/80 border border-slate-700 transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- スマホ用ドロップダウンメニュー（初期非表示） -->
+    <div id="mobileMenu" class="hidden md:hidden pt-3 pb-2 border-t border-slate-800 mt-3 space-y-3 px-2">
+      <div class="flex items-center justify-between">
+        <span id="mobileAdminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
+        <button onclick="toggleAdminMode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          管理者切替
+        </button>
+      </div>
     </div>
   </header>
 
@@ -65,14 +92,35 @@
     </div>
   </main>
 
+  <!-- Firebase Initialization Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+      authDomain: "vocaloid-song-trackar.firebaseapp.com",
+      projectId: "youtube-vocaloid-song-trackar",
+      storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+      messagingSenderId: "543125801305",
+      appId: "1:543125801305:web:7556f46309f798105f6448",
+      measurementId: "G-L6NMKP7QQQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const query = (urlParams.get('q') || '').trim();
-    let uniqueSongsList = []; // 🌟 動画IDごとにユニーク化したリスト
+    let uniqueSongsList = [];
+    let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
 
     async function initSearchPage() {
       document.getElementById('searchInput').value = query;
       document.getElementById('searchKeywordDisplay').innerText = query || '全体トレンド';
+      updateAdminUI();
 
       let rawLogs = [];
       try {
@@ -83,7 +131,6 @@
           throw new Error();
         }
       } catch (err) {
-        // フォールバックサンプル
         rawLogs = [
           { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, published_at: '2024-04-27', updated_at: '2026/11/02 10:00:00' },
           { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, published_at: '2026-10-15', updated_at: '2026/11/02 10:00:00' },
@@ -91,11 +138,9 @@
         ];
       }
 
-      // 🌟 【重要】動画ID (video_id) ごとに最新のログ1件だけを抽出する処理
       const songMap = {};
       rawLogs.forEach(log => {
         if (!log.video_id) return;
-        // まだ登録されていないか、既存のものより新しい日時であれば上書き
         if (!songMap[log.video_id] || new Date(log.updated_at) > new Date(songMap[log.video_id].updated_at)) {
           songMap[log.video_id] = log;
         }
@@ -103,6 +148,33 @@
       uniqueSongsList = Object.values(songMap);
 
       applySortAndFilter();
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    function toggleAdminMode() {
+      isAdminMode = !isAdminMode;
+      localStorage.setItem('voca_admin_mode', isAdminMode);
+      updateAdminUI();
+    }
+
+    function updateAdminUI() {
+      const indicator = document.getElementById('adminStatusIndicator');
+      const mobileIndicator = document.getElementById('mobileAdminStatusIndicator');
+      if (isAdminMode) {
+        const text = '🔓 管理者モード';
+        const className = 'text-xs text-cyan-400 font-bold';
+        if (indicator) { indicator.innerText = text; indicator.className = className; }
+        if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
+      } else {
+        const text = '🔒 一般閲覧モード';
+        const className = 'text-xs text-slate-400';
+        if (indicator) { indicator.innerText = text; indicator.className = className; }
+        if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
+      }
     }
 
     function calculateTrendScore(song) {
@@ -123,7 +195,6 @@
     function applySortAndFilter() {
       const q = query.toLowerCase();
       
-      // キーワードで絞り込み
       let filtered = uniqueSongsList.filter(s => {
         const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
         const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
@@ -136,7 +207,6 @@
         return title.includes(q) || producer.includes(q) || videoId.includes(q);
       });
 
-      // ソート処理
       const sortVal = document.getElementById('sortSelect').value;
       filtered.sort((a, b) => {
         if (sortVal === 'trend') {
