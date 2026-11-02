@@ -36,11 +36,31 @@
     <div class="max-w-5xl mx-auto flex items-center justify-between">
       <a href="index.html" class="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 text-sm font-medium transition">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        <span>トップページ（一覧）に戻る</span>
+        <span class="hidden sm:inline">トップページ（一覧）に戻る</span>
+        <span class="sm:hidden">トップに戻る</span>
       </a>
-      <div class="flex items-center gap-3">
+
+      <!-- PC用メニュー（中画面以上で表示） -->
+      <div class="hidden md:flex items-center gap-4">
         <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
-        <button onclick="toggleAdminMode()" id="adminToggleBtn" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded border border-slate-700 transition">
+        <button onclick="toggleAdminMode()" id="adminToggleBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          管理者切替
+        </button>
+      </div>
+
+      <!-- スマホ用ハンバーガーボタン（小画面で表示） -->
+      <div class="md:hidden flex items-center">
+        <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-1.5 rounded-lg bg-slate-800/80 border border-slate-700 transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- スマホ用ドロップダウンメニュー（初期非表示） -->
+    <div id="mobileMenu" class="hidden md:hidden pt-3 pb-2 border-t border-slate-800 mt-3 space-y-3 px-2">
+      <div class="flex items-center justify-between">
+        <span id="mobileAdminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
+        <button onclick="toggleAdminMode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
           管理者切替
         </button>
       </div>
@@ -112,7 +132,7 @@
           <div class="flex-1 space-y-2">
             <div id="freeTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
             
-            <!-- 追加入力フォーム（誰でも追加可能） -->
+            <!-- 追加入力フォーム -->
             <div class="flex items-center gap-1.5 max-w-xs">
               <input type="text" id="newFreeTagInput" list="existingTagsList" placeholder="タグを追加 (候補が出ます)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 w-full">
               <datalist id="existingTagsList"></datalist>
@@ -203,7 +223,26 @@
 
   </main>
 
-  <!-- Script logic -->
+  <!-- Firebase Initialization Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+      authDomain: "vocaloid-song-trackar.firebaseapp.com",
+      projectId: "youtube-vocaloid-song-trackar",
+      storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+      messagingSenderId: "543125801305",
+      appId: "1:543125801305:web:7556f46309f798105f6448",
+      measurementId: "G-L6NMKP7QQQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+
+  <!-- Application Logic Script -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = urlParams.get('id');
@@ -272,6 +311,12 @@
       renderLogTable(allLogsForSong.slice(0, 30));
     }
 
+    // ハンバーガーメニューの開閉制御
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
     // 🏷️ タグ管理機能のロジック
     function getSongTags() {
       const allTags = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
@@ -332,7 +377,7 @@
     }
 
     function removeFreeTag(tagToRemove) {
-      if (!isAdminMode) return; // 管理者以外は削除不可
+      if (!isAdminMode) return;
       const tags = getSongTags();
       tags.free = tags.free.filter(t => t !== tagToRemove);
       saveSongTags(tags);
@@ -355,31 +400,41 @@
       isAdminMode = !isAdminMode;
       localStorage.setItem('voca_admin_mode', isAdminMode);
       updateAdminUI();
-      renderTags(); // 管理者モード切り替え時にフリータグの削除ボタンの表示/非表示を即座に反映
+      renderTags();
     }
 
     function updateAdminUI() {
       const indicator = document.getElementById('adminStatusIndicator');
+      const mobileIndicator = document.getElementById('mobileAdminStatusIndicator');
       const editBtn = document.getElementById('editTitleBtn');
-      const toggleBtn = document.getElementById('adminToggleBtn');
 
       const editVocalBtn = document.getElementById('editVocalBtn');
       const editCreditBtn = document.getElementById('editCreditBtn');
 
       if (isAdminMode) {
-        indicator.innerText = '🔓 管理者モード';
-        indicator.className = 'text-xs text-cyan-400 font-bold';
+        const text = '🔓 管理者モード';
+        const className = 'text-xs text-cyan-400 font-bold';
+        
+        indicator.innerText = text;
+        indicator.className = className;
+        mobileIndicator.innerText = text;
+        mobileIndicator.className = className;
+
         editBtn.classList.remove('hidden');
         editVocalBtn.classList.remove('hidden');
         editCreditBtn.classList.remove('hidden');
-        toggleBtn.innerText = '一般モードへ';
       } else {
-        indicator.innerText = '🔒 一般閲覧モード';
-        indicator.className = 'text-xs text-slate-400';
+        const text = '🔒 一般閲覧モード';
+        const className = 'text-xs text-slate-400';
+
+        indicator.innerText = text;
+        indicator.className = className;
+        mobileIndicator.innerText = text;
+        mobileIndicator.className = className;
+
         editBtn.classList.add('hidden');
         editVocalBtn.classList.add('hidden');
         editCreditBtn.classList.add('hidden');
-        toggleBtn.innerText = '管理者切替';
         cancelTitleEdit();
       }
     }
