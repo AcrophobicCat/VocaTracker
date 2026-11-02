@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>楽曲検索 - VocaTracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#0f172a', cardbg: '#1e293b' } } } }
+  </script>
+  <style> body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; } </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center space-x-2 shrink-0">
+        <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white">
+          <i data-lucide="activity" class="w-5 h-5"></i>
+        </div>
+        <span class="font-bold text-lg bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent hidden sm:inline">VocaTracker</span>
+      </a>
+
+      <!-- 検索ヘッダーフォーム -->
+      <form action="search.html" method="GET" class="flex-1 max-w-xl">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="searchInput" name="q" placeholder="曲名、ボカロP名、動画ID..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-16 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+          <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-medium px-3 py-1 rounded-lg">検索</button>
+        </div>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+    
+    <!-- 検索条件 ＆ ソートコントローラー -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+      <div>
+        <h1 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
+          「<span id="searchKeywordDisplay" class="text-cyan-400">---</span>」の検索結果
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5"><span id="resultCount">0</span> 件の楽曲が見つかりました（トレンド最適化表示）</p>
+      </div>
+
+      <!-- ソート切り替え（トレンド最適化をデフォルトに） -->
+      <div class="flex items-center gap-2 text-xs">
+        <span class="text-slate-400 shrink-0">並び替え:</span>
+        <select id="sortSelect" onchange="applySortAndFilter()" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-cyan-500">
+          <option value="trend">🔥 おすすめ・トレンド順 (勢い重視)</option>
+          <option value="increase_desc">直近増加数が多い順</option>
+          <option value="views_desc">累計再生数が多い順</option>
+          <option value="date_desc">投稿日時が新しい順</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 検索結果一覧グリッド -->
+    <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- JavaScriptで動的生成 -->
+    </div>
+  </main>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = (urlParams.get('q') || '').trim();
+    let searchDataset = [];
+
+    async function initSearchPage() {
+      document.getElementById('searchInput').value = query;
+      document.getElementById('searchKeywordDisplay').innerText = query || '全体トレンド';
+
+      try {
+        const response = await fetch('vocaloid_tracker_logs_30d.json');
+        if (response.ok) {
+          searchDataset = await response.json();
+        } else {
+          throw new Error();
+        }
+      } catch (err) {
+        // フォールバックサンプル
+        searchDataset = [
+          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, published_at: '2024-04-27' },
+          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, published_at: '2026-10-15' },
+          { video_id: 'b0987654321', title: 'サイバー・ディストピア', producer: 'ElectroProducer', views: 1050000, hourly_inclease: 120000, published_at: '2026-10-20' }
+        ];
+      }
+
+      applySortAndFilter();
+    }
+
+    /**
+     * 🌟 ニコニコ風トレンド・スコアリング関数
+     * 累計再生数だけでなく、「直近1時間の増加分（hourly_inclease）」や「投稿からの新しさ」に高い重みを与えてスコア化します。
+     */
+    function calculateTrendScore(song) {
+      const views = song.views || 0;
+      const increase = song.hourly_inclease || 0;
+      
+      // 投稿日からの経過日数に応じたフレッシュネスボーナス（新しいほど高得点）
+      let freshnessBonus = 1.0;
+      if (song.published_at) {
+        const daysOld = (new Date() - new Date(song.published_at)) / (1000 * 60 * 60 * 24);
+        if (daysOld <= 7) freshnessBonus = 3.0;       // 1週間以内
+        else if (daysOld <= 30) freshnessBonus = 2.0;  // 1ヶ月以内
+        else if (daysOld <= 90) freshnessBonus = 1.5;  // 3ヶ月以内
+      }
+
+      // トレンドスコア = (直近増加数 × 50) + (累計再生数 × 0.001) × フレッシュネスボーナス
+      return (increase * 50 + views * 0.001) * freshnessBonus;
+    }
+
+    function applySortAndFilter() {
+      const q = query.toLowerCase();
+      
+      // キーワードで絞り込み (空白の場合は全件対象)
+      let filtered = searchDataset.filter(s => {
+        if (!q) return true;
+        return (s.title || '').toLowerCase().includes(q) ||
+               (s.producer || '').toLowerCase().includes(q) ||
+               (s.video_id || '').toLowerCase().includes(q) ||
+               (s.display_title || '').toLowerCase().includes(q);
+      });
+
+      // ソート処理
+      const sortVal = document.getElementById('sortSelect').value;
+      filtered.sort((a, b) => {
+        if (sortVal === 'trend') {
+          return calculateTrendScore(b) - calculateTrendScore(a);
+        }
+        if (sortVal === 'increase_desc') {
+          return (b.hourly_inclease || 0) - (a.hourly_inclease || 0);
+        }
+        if (sortVal === 'views_desc') {
+          return (b.views || 0) - (a.views || 0);
+        }
+        if (sortVal === 'date_desc') {
+          return new Date(b.published_at || 0) - new Date(a.published_at || 0);
+        }
+        return 0;
+      });
+
+      document.getElementById('resultCount').innerText = filtered.length;
+      renderResults(filtered);
+    }
+
+    function renderResults(songs) {
+      const container = document.getElementById('resultsGrid');
+      if (songs.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-2">
+            <i data-lucide="search-x" class="w-8 h-8 text-slate-500 mx-auto"></i>
+            <p class="text-sm font-medium text-slate-400">一致する楽曲が見つかりませんでした。</p>
+            <p class="text-xs text-slate-500">別のキーワードやボカロP名でお試しください。</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = songs.map(s => `
+        <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 block transition space-y-3 shadow-md group">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="text-cyan-400 font-mono">ID: ${s.video_id}</span>
+            <span class="text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">+${(s.hourly_inclease || 0).toLocaleString()} /h</span>
+          </div>
+          <h3 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-2 leading-snug">${escapeHTML(s.title)}</h3>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+            <span>P名: ${escapeHTML(s.producer || '不明')}</span>
+            <span class="font-semibold text-slate-300">${(s.views || 0).toLocaleString()} 回再生</span>
+          </div>
+        </a>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    window.onload = initSearchPage;
+  </script>
+</body>
+</html>
