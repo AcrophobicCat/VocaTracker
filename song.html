@@ -34,7 +34,6 @@
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
     <div class="max-w-5xl mx-auto flex items-center justify-between">
-      <!-- 🌟 ヘッダーロゴ ＆ 一覧に戻る -->
       <div class="flex items-center gap-4">
         <a href="index.html" class="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 font-bold text-sm tracking-wide transition">
           <i data-lucide="headphones" class="w-5 h-5 text-cyan-400"></i>
@@ -45,7 +44,7 @@
         </a>
       </div>
 
-      <!-- PC用メニュー（中画面以上で表示） -->
+      <!-- PC用メニュー -->
       <div class="hidden md:flex items-center gap-4">
         <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
         <button onclick="toggleAdminMode()" id="adminToggleBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
@@ -53,7 +52,7 @@
         </button>
       </div>
 
-      <!-- スマホ用ハンバーガーボタン（小画面で表示） -->
+      <!-- スマホ用ハンバーガーボタン -->
       <div class="md:hidden flex items-center">
         <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-1.5 rounded-lg bg-slate-800/80 border border-slate-700 transition">
           <i data-lucide="menu" class="w-5 h-5"></i>
@@ -61,7 +60,7 @@
       </div>
     </div>
 
-    <!-- スマホ用ドロップダウンメニュー（初期非表示） -->
+    <!-- スマホ用ドロップダウンメニュー -->
     <div id="mobileMenu" class="hidden md:hidden pt-3 pb-2 border-t border-slate-800 mt-3 space-y-3 px-2">
       <div class="flex items-center justify-between">
         <span id="mobileAdminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
@@ -75,9 +74,8 @@
   <!-- Main Content -->
   <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
     
-    <!-- Song Header Card with Clickable Thumbnail -->
+    <!-- Song Header Card -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row items-center gap-6 shadow-xl">
-      <!-- サムネイル画像 -->
       <a id="thumbnailLink" href="#" target="_blank" rel="noopener" class="w-full md:w-56 shrink-0 aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700/60 relative group shadow-lg block hover:border-cyan-500 transition">
         <img id="songThumbnail" src="" alt="サムネイル" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1">
@@ -91,7 +89,7 @@
           <span id="videoIdDisplay" class="text-xs text-slate-500 font-mono">ID: ---</span>
         </div>
 
-        <!-- タイトル表示 ＆ 編集エリア -->
+        <!-- タイトル編集 -->
         <div class="space-y-2">
           <div class="flex items-center gap-3">
             <h1 id="songTitle" class="text-xl md:text-2xl font-extrabold text-white leading-snug">読み込み中...</h1>
@@ -99,8 +97,6 @@
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
             </button>
           </div>
-
-          <!-- インライン編集用フォーム（タイトル） -->
           <div id="editTitleContainer" class="hidden flex gap-2 max-w-lg">
             <input type="text" id="editTitleInput" class="bg-slate-800 border border-cyan-500 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none w-full">
             <button onclick="saveCustomTitle()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-4 py-1.5 rounded-lg font-medium whitespace-nowrap transition">保存</button>
@@ -108,14 +104,12 @@
           </div>
         </div>
 
-        <!-- 🌟 ボカロP名表示 ＆ 管理者編集エリア -->
+        <!-- ボカロP編集 -->
         <div class="space-y-1">
           <div class="flex items-center gap-2 flex-wrap">
             <p class="text-sm text-cyan-400 font-medium">ボカロP: <span id="songProducer" class="underline">---</span></p>
             <button id="editProducerBtn" onclick="enableProducerEdit()" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">編集</button>
           </div>
-
-          <!-- インライン編集用フォーム（ボカロP） -->
           <div id="editProducerContainer" class="hidden flex gap-2 max-w-xs pt-1">
             <input type="text" id="editProducerInput" class="bg-slate-800 border border-cyan-500 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none w-full">
             <button onclick="saveCustomProducer()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1 rounded-lg font-medium whitespace-nowrap transition">保存</button>
@@ -131,41 +125,54 @@
       </div>
     </div>
 
-    <!-- 🏷️ タグ管理セクション (3分類) -->
+    <!-- 🏷️ タグ管理セクション (3分類 + それぞれサジェスト＆個別追加・削除対応) -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
         <i data-lucide="tag" class="w-4 h-4 text-cyan-400"></i> タグ情報
       </h3>
 
-      <div class="space-y-3 text-sm">
-        <!-- ① ボーカルタグ（管理者専用編集） -->
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs text-slate-400 w-20 shrink-0 font-bold">ボーカル:</span>
-          <div id="vocalTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
-          <button id="editVocalBtn" onclick="editAdminTags('vocal')" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">編集</button>
-        </div>
-
-        <!-- ② クレジットタグ（管理者専用編集） -->
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs text-slate-400 w-20 shrink-0 font-bold">クレジット:</span>
-          <div id="creditTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
-          <button id="editCreditBtn" onclick="editAdminTags('credit')" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">編集</button>
-        </div>
-
-        <!-- ③ フリータグ（追加は誰でもOK、削除は管理者のみ） -->
-        <div class="flex items-start gap-2 flex-wrap pt-2 border-t border-slate-800">
-          <span class="text-xs text-slate-400 w-20 shrink-0 font-bold pt-1">フリータグ:</span>
-          <div class="flex-1 space-y-2">
-            <div id="freeTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
-            
-            <!-- 追加入力フォーム -->
-            <div class="flex items-center gap-1.5 max-w-xs">
-              <input type="text" id="newFreeTagInput" list="existingTagsList" placeholder="タグを追加 (候補が出ます)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 w-full">
-              <datalist id="existingTagsList"></datalist>
-              <button onclick="addFreeTag()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
-            </div>
+      <div class="space-y-4 text-sm">
+        
+        <!-- ① ボーカルタグ（候補つき・追加削除対応） -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-slate-400 w-24 shrink-0 font-bold">使用ボーカル:</span>
+            <div id="vocalTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
+          </div>
+          <!-- 管理者用または誰でも追加できる入力フォーム（お好みで全員追加OKにしています） -->
+          <div class="flex items-center gap-1.5 pl-0 sm:pl-24">
+            <input type="text" id="newVocalTagInput" list="vocalMasterList" placeholder="ボーカルを追加 (例: 初音ミク)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-purple-500 max-w-xs w-full">
+            <datalist id="vocalMasterList"></datalist>
+            <button onclick="addTag('vocal')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
+
+        <!-- ② クレジットタグ（候補つき・追加削除対応） -->
+        <div class="space-y-2 pt-2 border-t border-slate-800/80">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-slate-400 w-24 shrink-0 font-bold">クレジット:</span>
+            <div id="creditTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
+          </div>
+          <div class="flex items-center gap-1.5 pl-0 sm:pl-24">
+            <input type="text" id="newCreditTagInput" list="creditMasterList" placeholder="クレジットを追加 (例: Music: 〇〇P)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 max-w-xs w-full">
+            <datalist id="creditMasterList"></datalist>
+            <button onclick="addTag('credit')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
+          </div>
+        </div>
+
+        <!-- ③ フリータグ（候補付き・追加、削除は管理者のみ） -->
+        <div class="space-y-2 pt-2 border-t border-slate-800/80">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-slate-400 w-24 shrink-0 font-bold pt-1">フリータグ:</span>
+            <div id="freeTagsContainer" class="flex items-center gap-1.5 flex-wrap flex-1"></div>
+          </div>
+          <div class="flex items-center gap-1.5 pl-0 sm:pl-24">
+            <input type="text" id="newFreeTagInput" list="freeMasterList" placeholder="タグを追加 (候補が出ます)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 max-w-xs w-full">
+            <datalist id="freeMasterList"></datalist>
+            <button onclick="addTag('free')" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -193,7 +200,6 @@
 
     <!-- Charts Grid Section -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- 累計再生数の推移グラフ -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
         <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
           <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i> 累計再生数の推移
@@ -203,7 +209,6 @@
         </div>
       </div>
 
-      <!-- 日間再生数（0:15基準）の棒グラフ -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -278,6 +283,38 @@
     let dailyBarChartInstance = null;
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
 
+    // 🌟 日時フォーマット関数（BigQueryのタイムスタンプや数値・文字列を「YYYY/MM/DD HH:MM:SS」に綺麗に変換）
+    function formatDateTime(rawDate) {
+      if (!rawDate) return '---';
+      
+      // すでにスラッシュ区切りのフォーマットならそのまま返す
+      if (typeof rawDate === 'string' && rawDate.includes('/')) {
+        return rawDate;
+      }
+
+      let d = new Date(rawDate);
+      // もし数値（エポック秒やミリ秒）の場合の判定
+      if (isNaN(d.getTime()) && !isNaN(Number(rawDate))) {
+        let num = Number(rawDate);
+        // 秒単位（10桁程度）ならミリ秒に変換
+        if (num < 10000000000) num *= 1000;
+        d = new Date(num);
+      }
+
+      if (isNaN(d.getTime())) {
+        return String(rawDate); // 変換できなければ元の文字列
+      }
+
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+
+      return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
+    }
+
     async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
@@ -286,7 +323,6 @@
 
       updateAdminUI();
 
-      // サムネイル画像のURLとリンクをセット
       const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       document.getElementById('songThumbnail').src = thumbnailUrl;
       document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${videoId}`;
@@ -306,8 +342,13 @@
         allLogs = JSON.parse(localStorage.getItem('vocaloid_tracker_logs_30d')) || getSampleLogs(videoId);
       }
 
+      // 日時を綺麗にパース・フォーマットして格納
       allLogsForSong = allLogs
         .filter(log => log.video_id === videoId)
+        .map(log => ({
+          ...log,
+          updated_at: formatDateTime(log.updated_at)
+        }))
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
       if (allLogsForSong.length === 0) {
@@ -319,12 +360,10 @@
 
       const latest = allLogsForSong[0];
       
-      // カスタムタイトルの適用
       const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
       const displayTitle = customTitles[videoId] || latest.title || `動画ID: ${videoId}`;
       document.getElementById('songTitle').innerText = displayTitle;
 
-      // 🌟 カスタムボカロP名の適用
       const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
       const displayProducer = customProducers[videoId] || latest.producer || '不明なP';
       document.getElementById('songProducer').innerText = displayProducer;
@@ -332,16 +371,14 @@
       document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
       document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
 
-      // スタッツカードの数値を反映
       document.getElementById('statCurrentViews').innerText = (latest.views || 0).toLocaleString();
       document.getElementById('statHourlyInc').innerText = `+${(latest.hourly_inclease || 0).toLocaleString()}`;
       document.getElementById('statLikes').innerText = (latest.like_count || 0).toLocaleString();
 
-      // タグの読み込み ＆ 描画
+      // タグの読み込み ＆ サジェスト更新
       renderTags();
       updateTagSuggestions();
 
-      // グラフ用データ構築
       const chronologicalLogs = [...allLogsForSong].reverse();
       const labels = chronologicalLogs.map(l => l.updated_at);
       const viewValues = chronologicalLogs.map(l => l.views);
@@ -365,10 +402,14 @@
       menu.classList.toggle('hidden');
     }
 
-    // 🏷️ タグ管理機能のロジック
+    // 🏷️ 3分類タグ管理（ボーカル・クレジット・フリー）のロジック
     function getSongTags() {
       const allTags = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
-      return allTags[videoId] || { vocal: ['初音ミク'], credit: ['Music: サンプルP'], free: ['ボカロ曲', '新曲'] };
+      return allTags[videoId] || { 
+        vocal: ['初音ミク'], 
+        credit: ['Music: サンプルP'], 
+        free: ['ボカロ曲', '新曲'] 
+      };
     }
 
     function saveSongTags(tagsObj) {
@@ -376,72 +417,81 @@
       allTags[videoId] = tagsObj;
       localStorage.setItem('voca_song_tags', JSON.stringify(allTags));
 
-      let masterFree = JSON.parse(localStorage.getItem('voca_master_free_tags')) || ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM'];
-      tagsObj.free.forEach(t => {
-        if (!masterFree.includes(t)) masterFree.push(t);
-      });
-      localStorage.setItem('voca_master_free_tags', JSON.stringify(masterFree));
-      
+      // 各マスターリスト（サジェスト候補）の自動蓄積
+      updateMasterList('voca_master_vocal_tags', tagsObj.vocal, ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', 'kaai yuki', '重音テト']);
+      updateMasterList('voca_master_credit_tags', tagsObj.credit, ['Music: サンプルP', 'Illustration: ゲスト', 'Mix: エンジニア']);
+      updateMasterList('voca_master_free_tags', tagsObj.free, ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM']);
+
       renderTags();
       updateTagSuggestions();
+    }
+
+    function updateMasterList(storageKey, currentValues, defaults) {
+      let master = JSON.parse(localStorage.getItem(storageKey)) || defaults;
+      currentValues.forEach(t => {
+        if (!master.includes(t)) master.push(t);
+      });
+      localStorage.setItem(storageKey, JSON.stringify(master));
     }
 
     function renderTags() {
       const tags = getSongTags();
       
+      // ① ボーカルタグ（削除は管理者のみ、または誰でもOKにしたい場合は調整可能）
       const vContainer = document.getElementById('vocalTagsContainer');
-      vContainer.innerHTML = tags.vocal.map(t => `<span class="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs px-2.5 py-0.5 rounded-full">${t}</span>`).join('') || '<span class="text-xs text-slate-500">未設定</span>';
+      vContainer.innerHTML = tags.vocal.map(t => {
+        let deleteBtn = isAdminMode ? `<button onclick="removeTag('vocal', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
+        return `<span class="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
+      }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
+      // ② クレジットタグ
       const cContainer = document.getElementById('creditTagsContainer');
-      cContainer.innerHTML = tags.credit.map(t => `<span class="bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full">${t}</span>`).join('') || '<span class="text-xs text-slate-500">未設定</span>';
+      cContainer.innerHTML = tags.credit.map(t => {
+        let deleteBtn = isAdminMode ? `<button onclick="removeTag('credit', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
+        return `<span class="bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
+      }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
+      // ③ フリータグ
       const fContainer = document.getElementById('freeTagsContainer');
       fContainer.innerHTML = tags.free.map(t => {
-        let deleteBtnHtml = isAdminMode ? `<button onclick="removeFreeTag('${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
-        return `<span class="bg-cyan-900/40 text-cyan-300 border border-cyan-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtnHtml}</span>`;
+        let deleteBtn = isAdminMode ? `<button onclick="removeTag('free', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
+        return `<span class="bg-cyan-900/40 text-cyan-300 border border-cyan-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
       }).join('') || '<span class="text-xs text-slate-500">タグなし</span>';
     }
 
     function updateTagSuggestions() {
+      const masterVocal = JSON.parse(localStorage.getItem('voca_master_vocal_tags')) || ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', '重音テト'];
+      document.getElementById('vocalMasterList').innerHTML = masterVocal.map(t => `<option value="${t}"></option>`).join('');
+
+      const masterCredit = JSON.parse(localStorage.getItem('voca_master_credit_tags')) || ['Music: サンプルP', 'Illustration: ゲスト'];
+      document.getElementById('creditMasterList').innerHTML = masterCredit.map(t => `<option value="${t}"></option>`).join('');
+
       const masterFree = JSON.parse(localStorage.getItem('voca_master_free_tags')) || ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM'];
-      const datalist = document.getElementById('existingTagsList');
-      datalist.innerHTML = masterFree.map(t => `<option value="${t}"></option>`).join('');
+      document.getElementById('freeMasterList').innerHTML = masterFree.map(t => `<option value="${t}"></option>`).join('');
     }
 
-    function addFreeTag() {
-      const input = document.getElementById('newFreeTagInput');
+    function addTag(type) {
+      const inputId = type === 'vocal' ? 'newVocalTagInput' : (type === 'credit' ? 'newCreditTagInput' : 'newFreeTagInput');
+      const input = document.getElementById(inputId);
       const val = input.value.trim();
       if (!val) return;
 
       const tags = getSongTags();
-      if (!tags.free.includes(val)) {
-        tags.free.push(val);
+      if (!tags[type].includes(val)) {
+        tags[type].push(val);
         saveSongTags(tags);
       }
       input.value = '';
     }
 
-    function removeFreeTag(tagToRemove) {
+    function removeTag(type, tagToRemove) {
       if (!isAdminMode) return;
       const tags = getSongTags();
-      tags.free = tags.free.filter(t => t !== tagToRemove);
+      tags[type] = tags[type].filter(t => t !== tagToRemove);
       saveSongTags(tags);
     }
 
-    function editAdminTags(type) {
-      if (!isAdminMode) return;
-      const tags = getSongTags();
-      const label = type === 'vocal' ? 'ボーカルタグ' : 'クレジットタグ';
-      const currentVal = tags[type].join(', ');
-      
-      const newVal = prompt(`${label}をカンマ（,）区切りで入力してください:`, currentVal);
-      if (newVal !== null) {
-        tags[type] = newVal.split(',').map(s => s.trim()).filter(Boolean);
-        saveSongTags(tags);
-      }
-    }
-
-    // 🌟 ボカロP名 編集関連の関数
+    // 編集関連の関数群
     function enableProducerEdit() {
       const currentProducer = document.getElementById('songProducer').innerText;
       document.getElementById('editProducerInput').value = currentProducer;
@@ -457,11 +507,9 @@
     function saveCustomProducer() {
       const newProducer = document.getElementById('editProducerInput').value.trim();
       if (!newProducer) return;
-
       const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
       customProducers[videoId] = newProducer;
       localStorage.setItem('voca_custom_producers', JSON.stringify(customProducers));
-
       document.getElementById('songProducer').innerText = newProducer;
       cancelProducerEdit();
     }
@@ -478,8 +526,6 @@
       const mobileIndicator = document.getElementById('mobileAdminStatusIndicator');
       const editBtn = document.getElementById('editTitleBtn');
       const editProducerBtn = document.getElementById('editProducerBtn');
-      const editVocalBtn = document.getElementById('editVocalBtn');
-      const editCreditBtn = document.getElementById('editCreditBtn');
 
       if (isAdminMode) {
         const text = '🔓 管理者モード';
@@ -490,8 +536,6 @@
         mobileIndicator.className = className;
         editBtn.classList.remove('hidden');
         editProducerBtn.classList.remove('hidden');
-        editVocalBtn.classList.remove('hidden');
-        editCreditBtn.classList.remove('hidden');
       } else {
         const text = '🔒 一般閲覧モード';
         const className = 'text-xs text-slate-400';
@@ -501,8 +545,6 @@
         mobileIndicator.className = className;
         editBtn.classList.add('hidden');
         editProducerBtn.classList.add('hidden');
-        editVocalBtn.classList.add('hidden');
-        editCreditBtn.classList.add('hidden');
         cancelTitleEdit();
         cancelProducerEdit();
       }
@@ -525,11 +567,9 @@
     function saveCustomTitle() {
       const newTitle = document.getElementById('editTitleInput').value.trim();
       if (!newTitle) return;
-
       const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
       customTitles[videoId] = newTitle;
       localStorage.setItem('voca_custom_titles', JSON.stringify(customTitles));
-
       document.getElementById('songTitle').innerText = newTitle;
       cancelTitleEdit();
     }
@@ -628,7 +668,7 @@
         return;
       }
       tbody.innerHTML = logs.map(log => `
-        <tr class="hover:bg-slate-800/40 transition">
+        <tr class="hover:bg-slate-800/40 --> transition">
           <td class="p-3 text-slate-400">${log.updated_at}</td>
           <td class="p-3 text-right font-medium text-slate-200">${(log.views || 0).toLocaleString()}</td>
           <td class="p-3 text-right text-cyan-400">+${(log.hourly_inclease || 0).toLocaleString()}</td>
@@ -639,9 +679,7 @@
 
     function getSampleLogs(vid) {
       return [
-        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230035917, hourly_inclease: 7771, like_count: 2251047, updated_at: '2026/11/02 09:00:25' },
-        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230028146, hourly_inclease: 9454, like_count: 2251023, updated_at: '2026/11/02 08:00:30' },
-        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230018692, hourly_inclease: 7481, like_count: 2250979, updated_at: '2026/11/02 07:00:40' }
+        { video_id: vid, title: 'サンプル楽曲 / 初音ミク', producer: 'サンプルP', views: 230035917, hourly_inclease: 7771, like_count: 2251047, updated_at: '2026/11/02 09:00:25' }
       ];
     }
 
