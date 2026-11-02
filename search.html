@@ -34,7 +34,7 @@
         </div>
       </form>
 
-      <!-- PC用メニュー（中画面以上で表示） -->
+      <!-- PC用メニュー -->
       <div class="hidden md:flex items-center gap-4">
         <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
         <button onclick="toggleAdminMode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
@@ -42,7 +42,7 @@
         </button>
       </div>
 
-      <!-- スマホ用ハンバーガーボタン（小画面で表示） -->
+      <!-- スマホ用ハンバーガーボタン -->
       <div class="md:hidden flex items-center">
         <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-1.5 rounded-lg bg-slate-800/80 border border-slate-700 transition">
           <i data-lucide="menu" class="w-5 h-5"></i>
@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <!-- スマホ用ドロップダウンメニュー（初期非表示） -->
+    <!-- スマホ用ドロップダウンメニュー -->
     <div id="mobileMenu" class="hidden md:hidden pt-3 pb-2 border-t border-slate-800 mt-3 space-y-3 px-2">
       <div class="flex items-center justify-between">
         <span id="mobileAdminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
@@ -71,7 +71,7 @@
           <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
           「<span id="searchKeywordDisplay" class="text-cyan-400">---</span>」の検索結果
         </h1>
-        <p class="text-xs text-slate-400 mt-0.5"><span id="resultCount">0</span> 件の楽曲が見つかりました（トレンド最適化表示）</p>
+        <p class="text-xs text-slate-400 mt-0.5"><span id="resultCount">0</span> 件の楽曲が見つかりました</p>
       </div>
 
       <!-- ソート切り替え -->
@@ -81,7 +81,9 @@
           <option value="trend">🔥 おすすめ・トレンド順 (勢い重視)</option>
           <option value="increase_desc">直近増加数が多い順</option>
           <option value="views_desc">累計再生数が多い順</option>
+          <option value="likes_desc">高評価の多い順</option>
           <option value="date_desc">投稿日時が新しい順</option>
+          <option value="date_asc">投稿日時が古い順</option>
         </select>
       </div>
     </div>
@@ -132,20 +134,38 @@
         }
       } catch (err) {
         rawLogs = [
-          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, published_at: '2024-04-27', updated_at: '2026/11/02 10:00:00' },
-          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, published_at: '2026-10-15', updated_at: '2026/11/02 10:00:00' },
-          { video_id: 'b0987654321', title: 'サイバー・ディストピア', producer: 'ElectroProducer', views: 1050000, hourly_inclease: 120000, published_at: '2026-10-20', updated_at: '2026/11/02 10:00:00' }
+          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, like_count: 500000, published_at: '2024-04-27', updated_at: '2026/11/02 10:00:00' },
+          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, like_count: 40000, published_at: '2026-10-15', updated_at: '2026/11/02 10:00:00' }
         ];
       }
 
+      // 🌟 動画IDごとにユニーク化しつつ、各曲の最古ログ日時や最新数値を保持
       const songMap = {};
       rawLogs.forEach(log => {
         if (!log.video_id) return;
-        if (!songMap[log.video_id] || new Date(log.updated_at) > new Date(songMap[log.video_id].updated_at)) {
-          songMap[log.video_id] = log;
+        
+        const logTime = new Date(log.updated_at || log.published_at || 0).getTime();
+
+        if (!songMap[log.video_id]) {
+          songMap[log.video_id] = { ...log, oldest_time: logTime };
+        } else {
+          // より新しいログであれば基本データを更新
+          if (logTime > new Date(songMap[log.video_id].updated_at || 0).getTime()) {
+            const oldest = songMap[log.video_id].oldest_time;
+            songMap[log.video_id] = { ...log, oldest_time: oldest };
+          }
+          // 最古の日時を保持
+          if (logTime < songMap[log.video_id].oldest_time) {
+            songMap[log.video_id].oldest_time = logTime;
+          }
         }
       });
-      uniqueSongsList = Object.values(songMap);
+
+      uniqueSongsList = Object.values(songMap).map(s => ({
+        ...s,
+        // published_at が無い場合は、保持している最古のログ日時を投稿日時としてフォールバック
+        parsed_published_at: new Date(s.published_at || s.oldest_time || 0).getTime()
+      }));
 
       applySortAndFilter();
     }
@@ -164,17 +184,10 @@
     function updateAdminUI() {
       const indicator = document.getElementById('adminStatusIndicator');
       const mobileIndicator = document.getElementById('mobileAdminStatusIndicator');
-      if (isAdminMode) {
-        const text = '🔓 管理者モード';
-        const className = 'text-xs text-cyan-400 font-bold';
-        if (indicator) { indicator.innerText = text; indicator.className = className; }
-        if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
-      } else {
-        const text = '🔒 一般閲覧モード';
-        const className = 'text-xs text-slate-400';
-        if (indicator) { indicator.innerText = text; indicator.className = className; }
-        if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
-      }
+      const text = isAdminMode ? '🔓 管理者モード' : '🔒 一般閲覧モード';
+      const className = isAdminMode ? 'text-xs text-cyan-400 font-bold' : 'text-xs text-slate-400';
+      if (indicator) { indicator.innerText = text; indicator.className = className; }
+      if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
     }
 
     function calculateTrendScore(song) {
@@ -182,12 +195,10 @@
       const increase = song.hourly_inclease || 0;
       
       let freshnessBonus = 1.0;
-      if (song.published_at) {
-        const daysOld = (new Date() - new Date(song.published_at)) / (1000 * 60 * 60 * 24);
-        if (daysOld <= 7) freshnessBonus = 3.0;
-        else if (daysOld <= 30) freshnessBonus = 2.0;
-        else if (daysOld <= 90) freshnessBonus = 1.5;
-      }
+      const daysOld = (Date.now() - song.parsed_published_at) / (1000 * 60 * 60 * 24);
+      if (daysOld <= 7) freshnessBonus = 3.0;
+      else if (daysOld <= 30) freshnessBonus = 2.0;
+      else if (daysOld <= 90) freshnessBonus = 1.5;
 
       return (increase * 50 + views * 0.001) * freshnessBonus;
     }
@@ -218,8 +229,16 @@
         if (sortVal === 'views_desc') {
           return (b.views || 0) - (a.views || 0);
         }
+        if (sortVal === 'likes_desc') {
+          return (b.like_count || 0) - (a.like_count || 0);
+        }
         if (sortVal === 'date_desc') {
-          return new Date(b.published_at || 0) - new Date(a.published_at || 0);
+          // 投稿日時が新しい順
+          return b.parsed_published_at - a.parsed_published_at;
+        }
+        if (sortVal === 'date_asc') {
+          // 投稿日時が古い順
+          return a.parsed_published_at - b.parsed_published_at;
         }
         return 0;
       });
