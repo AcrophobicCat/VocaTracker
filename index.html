@@ -16,13 +16,6 @@
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#ecfeff',
-              100: '#cffaff',
-              500: '#06b6d4',
-              600: '#0891b2',
-              900: '#164e63',
-            },
             darkbg: '#0f172a',
             cardbg: '#1e293b'
           }
@@ -40,213 +33,163 @@
 
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2 cursor-pointer" onclick="switchTab('home')">
-          <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white">
-            <i data-lucide="activity" class="w-6 h-6"></i>
-          </div>
-          <div>
-            <h1 class="font-bold text-xl tracking-wider bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">VocaTracker</h1>
-            <p class="text-[10px] text-slate-400">Synthetic Voice Analytics & Radar</p>
-          </div>
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2.5">
+        <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white shadow-lg shadow-cyan-500/20">
+          <i data-lucide="activity" class="w-6 h-6"></i>
         </div>
-        
-        <!-- Mobile Menu Toggle -->
-        <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-400 hover:text-white">
-          <i data-lucide="menu" class="w-6 h-6"></i>
-        </button>
-      </div>
+        <div>
+          <h1 class="font-bold text-xl tracking-wider bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">VocaTracker</h1>
+          <p class="text-[10px] text-slate-400">Synthetic Voice Analytics Portal</p>
+        </div>
+      </a>
 
-      <!-- Search Bar -->
-      <div class="relative flex-1 max-w-md">
-        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="曲名、ボカロP、ボーカル、タグで検索..." class="w-full bg-slate-800 border border-slate-700 rounded-full pl-9 pr-4 py-1.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition">
-      </div>
-
-      <!-- Navigation Desktop -->
+      <!-- Header Links (将来的な他ページへのナビゲーション準備) -->
       <nav class="hidden md:flex items-center space-x-1 text-sm font-medium">
-        <button onclick="switchTab('home')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="home">トップ</button>
-        <button onclick="switchTab('truebuzz')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="truebuzz">バズレーダー</button>
-        <button onclick="switchTab('newrelease')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="newrelease">新曲レーダー</button>
-        <button onclick="switchTab('forecast')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="forecast">大台予測</button>
-        <button onclick="switchTab('archive')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="archive">大台突破</button>
-        <button onclick="switchTab('ranking')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="ranking">ランキング</button>
+        <a href="index.html" class="px-3 py-1.5 rounded-lg text-cyan-400 bg-slate-800">ホーム</a>
+        <a href="ranking.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition">ランキング</a>
+        <!-- 必要に応じて他のページへのリンクを追加 -->
       </nav>
+
+      <!-- Mobile Menu Toggle -->
+      <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-400 hover:text-white">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
     </div>
 
-    <!-- Navigation Mobile Dropdown -->
+    <!-- Mobile Menu Dropdown -->
     <div id="mobileMenu" class="hidden md:hidden pt-3 border-t border-slate-800 mt-2 space-y-1">
-      <button onclick="switchTab('home')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">トップページ</button>
-      <button onclick="switchTab('truebuzz')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🔥 True Buzz Radar</button>
-      <button onclick="switchTab('newrelease')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🌱 New Release Radar</button>
-      <button onclick="switchTab('forecast')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🎯 大台達成予測</button>
-      <button onclick="switchTab('archive')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🏆 大台突破アーカイブ</button>
-      <button onclick="switchTab('ranking')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">📊 再生数ランキング</button>
+      <a href="index.html" class="block px-3 py-2 rounded-lg text-cyan-400 bg-slate-800 text-sm">ホーム</a>
+      <a href="ranking.html" class="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 text-sm">ランキング</a>
       <button onclick="openModal('privacyModal')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-400 text-xs">プライバシーポリシー</button>
     </div>
   </header>
 
   <!-- Main Content Area -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8">
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 space-y-10">
 
-    <!-- HOME TAB -->
-    <section id="tab-home" class="tab-content space-y-8">
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-        <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="max-w-3xl space-y-3">
-          <div class="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-3 py-1 rounded-full text-xs">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-            <span>VocaTracker Dashboard v3.0 (Multi-Page Architecture)</span>
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
+      <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="max-w-3xl space-y-4">
+        <div class="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>VocaTracker Static Site Architecture</span>
+        </div>
+        <h2 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">ボカロシーンの動向を掴むアナリティクスハブ</h2>
+        <p class="text-sm md:text-base text-slate-300 leading-relaxed">
+          YouTube Data APIとBigQueryによる高精度トラッキングデータを、セルフホスト型静的ページで高速表示。気になる楽曲の詳細データや推移グラフへ直接アクセスできます。
+        </p>
+
+        <!-- Search Bar in Hero -->
+        <div class="pt-2">
+          <div class="relative max-w-xl">
+            <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="曲名やボカロP名で楽曲を検索..." class="w-full bg-slate-900/90 border border-slate-700 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 shadow-inner transition">
           </div>
-          <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">ボカロシーンの「今」を掴むリアルタイム解析ポータル</h2>
-          <p class="text-sm text-slate-400">YouTube Data APIとBigQueryを活用し、急上昇曲の検知、大台予測、上位100曲ランキングを提供します。</p>
-        </div>
-
-        <div class="mt-6">
-          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <i data-lucide="flame" class="w-4 h-4 text-orange-400"></i> 今注目のピックアップ楽曲
-          </h3>
-          <div id="featuredContainer" class="flex gap-4 overflow-x-auto pb-2 no-scrollbar"></div>
         </div>
       </div>
+    </div>
 
-      <!-- Quick Nav Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div onclick="switchTab('truebuzz')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2.5 bg-orange-500/10 text-orange-400 rounded-lg group-hover:bg-orange-500 group-hover:text-white transition">
-              <i data-lucide="flame" class="w-6 h-6"></i>
-            </div>
-            <span class="text-xs text-orange-400 font-semibold bg-orange-500/10 px-2 py-0.5 rounded">REALTIME</span>
-          </div>
-          <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">バズレーダー</h3>
-          <p class="text-xs text-slate-400 mt-1">3時間連続で勢いを判定した急上昇曲。</p>
-        </div>
-
-        <div onclick="switchTab('newrelease')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition">
-              <i data-lucide="zap" class="w-6 h-6"></i>
-            </div>
-            <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">14 DAYS</span>
-          </div>
-          <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">新曲レーダー</h3>
-          <p class="text-xs text-slate-400 mt-1">投稿14日以内の期待の最新作。</p>
-        </div>
-
-        <div onclick="switchTab('forecast')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2.5 bg-purple-500/10 text-purple-400 rounded-lg group-hover:bg-purple-500 group-hover:text-white transition">
-              <i data-lucide="target" class="w-6 h-6"></i>
-            </div>
-            <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-2 py-0.5 rounded">FORECAST</span>
-          </div>
-          <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">大台予測</h3>
-          <p class="text-xs text-slate-400 mt-1">100万回や1000万回突破の到達カウントダウン。</p>
-        </div>
-
-        <div onclick="switchTab('ranking')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2.5 bg-blue-500/10 text-blue-400 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition">
-              <i data-lucide="trophy" class="w-6 h-6"></i>
-            </div>
-            <span class="text-xs text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded">TOP 100</span>
-          </div>
-          <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">再生数ランキング</h3>
-          <p class="text-xs text-slate-400 mt-1">累積再生数に基づく上位100曲のランキング。</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- TRUE BUZZ RADAR TAB -->
-    <section id="tab-truebuzz" class="tab-content hidden space-y-6">
-      <div class="border-b border-slate-800 pb-4">
-        <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-          <i data-lucide="flame" class="text-orange-500"></i> True Buzz Radar
-        </h2>
-        <p class="text-xs text-slate-400">急上昇中の注目楽曲一覧</p>
-      </div>
-      <div id="trueBuzzContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-    <!-- NEW RELEASE RADAR TAB -->
-    <section id="tab-newrelease" class="tab-content hidden space-y-6">
-      <div class="border-b border-slate-800 pb-4">
-        <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-          <i data-lucide="zap" class="text-emerald-400"></i> New Release Radar
-        </h2>
-        <p class="text-xs text-slate-400">投稿14日以内の期待のニューリリース楽曲</p>
-      </div>
-      <div id="newReleaseContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-    <!-- MILESTONE FORECAST TAB -->
-    <section id="tab-forecast" class="tab-content hidden space-y-6">
-      <div class="border-b border-slate-800 pb-4">
-        <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-          <i data-lucide="target" class="text-purple-400"></i> 大台達成予測 (Milestone Forecast)
-        </h2>
-        <p class="text-xs text-slate-400">ミリオン・神話入り到達予測</p>
-      </div>
-      <div id="forecastContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-    <!-- MILESTONE ARCHIVE TAB -->
-    <section id="tab-archive" class="tab-content hidden space-y-6">
-      <div class="border-b border-slate-800 pb-4">
-        <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-          <i data-lucide="award" class="text-yellow-400"></i> 大台突破アーカイブ (Milestone Achieved)
-        </h2>
-        <p class="text-xs text-slate-400">100万回・1000万回再生を突破した歴史的楽曲記録</p>
-      </div>
-      <div id="archiveContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-    <!-- RANKING TAB (TOP 100) -->
-    <section id="tab-ranking" class="tab-content hidden space-y-6">
-      <div class="border-b border-slate-800 pb-4 flex items-center justify-between">
-        <div>
-          <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <i data-lucide="trophy" class="text-yellow-400"></i> 再生数ランキング
-          </h2>
-          <p class="text-xs text-slate-400">累計再生数に基づく上位楽曲の一覧です</p>
-        </div>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-900/60 text-xs text-slate-400 uppercase border-b border-slate-700">
-              <tr>
-                <th class="p-3 text-center">#</th>
-                <th class="p-3">楽曲</th>
-                <th class="p-3">ボカロP</th>
-                <th class="p-3 text-right">累計再生数</th>
-                <th class="p-3 text-right">24h増分</th>
-              </tr>
-            </thead>
-            <tbody id="rankingTableBody" class="divide-y divide-slate-700/50"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- SEARCH RESULTS SECTION -->
+    <!-- Search Results Section (Initially Hidden) -->
     <section id="searchResultSection" class="hidden space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h2 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
+        <h3 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
           <i data-lucide="search" class="w-5 h-5"></i> 検索結果
-        </h2>
-        <button onclick="clearSearch()" class="text-xs text-slate-400 hover:text-white">検索キャンセル</button>
+        </h3>
+        <button onclick="clearSearch()" class="text-xs text-slate-400 hover:text-white">検索を閉じる</button>
       </div>
       <div id="searchResultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Portal Navigation Grid (各ページへのハブカード) -->
+    <section class="space-y-4">
+      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+        <i data-lucide="compass" class="w-4 h-4 text-cyan-400"></i> 各種アナリティクス・専用ページ
+      </h3>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        <!-- バズレーダー -->
+        <a href="buzz.html" class="bg-slate-900/80 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-6 transition group block shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-3 bg-orange-500/10 text-orange-400 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition">
+              <i data-lucide="flame" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs text-orange-400 font-semibold bg-orange-500/10 px-2.5 py-1 rounded-full">REALTIME</span>
+          </div>
+          <h4 class="font-bold text-lg text-white group-hover:text-orange-400 transition">バズレーダー</h4>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">直近の急上昇トレンドをリアルタイムで検知した注目楽曲のまとめ。</p>
+        </a>
+
+        <!-- 新曲レーダー -->
+        <a href="newrelease.html" class="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 transition group block shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition">
+              <i data-lucide="zap" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full">14 DAYS</span>
+          </div>
+          <h4 class="font-bold text-lg text-white group-hover:text-emerald-400 transition">新曲レーダー</h4>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">投稿から14日以内のフレッシュなニューリリース作品をピックアップ。</p>
+        </a>
+
+        <!-- 大台予測 -->
+        <a href="forecast.html" class="bg-slate-900/80 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-6 transition group block shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl group-hover:bg-purple-500 group-hover:text-white transition">
+              <i data-lucide="target" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-2.5 py-1 rounded-full">FORECAST</span>
+          </div>
+          <h4 class="font-bold text-lg text-white group-hover:text-purple-400 transition">大台達成予測</h4>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">ミリオンや神話入り（1000万回）到達までのカウントダウン推計。</p>
+        </a>
+
+        <!-- 大台突破アーカイブ -->
+        <a href="archive.html" class="bg-slate-900/80 border border-slate-800 hover:border-yellow-500/50 rounded-2xl p-6 transition group block shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-3 bg-yellow-500/10 text-yellow-400 rounded-xl group-hover:bg-yellow-500 group-hover:text-white transition">
+              <i data-lucide="award" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs text-yellow-400 font-semibold bg-yellow-500/10 px-2.5 py-1 rounded-full">ARCHIVE</span>
+          </div>
+          <h4 class="font-bold text-lg text-white group-hover:text-yellow-400 transition">大台突破アーカイブ</h4>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">過去に大台を達成した歴史的な記録・マイルストーンの数々。</p>
+        </a>
+
+        <!-- ランキング -->
+        <a href="ranking.html" class="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-6 transition group block shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition">
+              <i data-lucide="trophy" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs text-blue-400 font-semibold bg-blue-500/10 px-2.5 py-1 rounded-full">TOP 100</span>
+          </div>
+          <h4 class="font-bold text-lg text-white group-hover:text-blue-400 transition">再生数ランキング</h4>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">累積再生数に基づく総合ランキング上位100曲の一覧。</p>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Featured Songs Preview (直近の注目楽曲をピックアップ表示) -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="flame" class="w-4 h-4 text-orange-400"></i> 注目のピックアップ楽曲
+        </h3>
+        <a href="ranking.html" class="text-xs text-cyan-400 hover:underline">ランキングをすべて見る →</a>
+      </div>
+      <div id="featuredContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- JavaScriptで動的生成 -->
+      </div>
     </section>
 
   </main>
 
   <!-- Footer -->
-  <footer class="bg-slate-900 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500 space-y-3">
+  <footer class="bg-slate-900 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500 space-y-3 mt-12">
     <p>© 2026 VocaTracker. Non-commercial Fan Data Portal.</p>
     <div class="flex justify-center space-x-4">
       <button onclick="openModal('privacyModal')" class="hover:underline">プライバシーポリシー</button>
@@ -267,53 +210,9 @@
     </div>
   </div>
 
+  <!-- Script for Portal Hub & Search & JSON Fetch -->
   <script>
-    const initialSongs = [
-      {
-        video_id: 'NhuTf1-yE64',
-        title: 'メズマライザー / 初音ミク・重音テト',
-        clean_title: 'メズマライザー',
-        producer: 'サツキ',
-        vocal: '初音ミク, 重音テト',
-        views: 9400000,
-        increase_24h: 180000,
-        category: 'truebuzz',
-        buzz_status: '🔥 大ヒット',
-        target_milestone: '1000万回（神話入り）',
-        estimated_days: 4,
-        milestone_achieved: null
-      },
-      {
-        video_id: 'a1234567890',
-        title: '新世代のレボリューション / 初音ミク【Official MV】',
-        clean_title: '新世代のレボリューション',
-        producer: 'MikuP',
-        vocal: '初音ミク',
-        views: 820000,
-        increase_24h: 85000,
-        category: 'newrelease',
-        buzz_status: '⚡ 大注目',
-        target_milestone: '100万回（殿堂入り）',
-        estimated_days: 3,
-        milestone_achieved: null
-      },
-      {
-        video_id: 'b0987654321',
-        title: 'サイバー・ディストピア (Cyber Dystopia)',
-        clean_title: 'サイバー・ディストピア',
-        producer: 'ElectroProducer',
-        vocal: '巡音ルカ',
-        views: 1050000,
-        increase_24h: 120000,
-        category: 'newrelease',
-        buzz_status: '🔥 超新星',
-        target_milestone: '100万回（殿堂入り）',
-        estimated_days: 0,
-        milestone_achieved: '🎉 100万回達成 (2026/10/28)'
-      }
-    ];
-
-    let songs = [];
+    let allSongs = [];
 
     function escapeHTML(str) {
       if (!str) return '';
@@ -322,41 +221,48 @@
       );
     }
 
-    function initData() {
-      const stored = localStorage.getItem('vocaloid_tracker_songs_v3');
-      if (stored) {
-        songs = JSON.parse(stored);
-      } else {
-        songs = initialSongs;
-        saveToStorage();
-      }
-      renderAll();
-    }
-
-    function saveToStorage() {
-      localStorage.setItem('vocaloid_tracker_songs_v3', JSON.stringify(songs));
-    }
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById('searchResultSection').classList.add('hidden');
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-      
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        if (btn.dataset.tab === tabId) {
-          btn.classList.add('bg-slate-800', 'text-cyan-400');
+    async function initPortal() {
+      try {
+        // Googleドライブ等から書き出されたJSON、またはローカルストレージから取得
+        const response = await fetch('vocaloid_tracker_logs_30d.json');
+        if (response.ok) {
+          allSongs = await response.json();
         } else {
-          btn.classList.remove('bg-slate-800', 'text-cyan-400');
+          throw new Error('JSON not found');
         }
-      });
-      closeMobileMenu();
+      } catch (err) {
+        // フォールバック（サンプルデータ）
+        allSongs = [
+          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, updated_at: '2026/11/02 09:00:00' },
+          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, updated_at: '2026/11/02 09:00:00' },
+          { video_id: 'b0987654321', title: 'サイバー・ディストピア', producer: 'ElectroProducer', views: 1050000, hourly_inclease: 120000, updated_at: '2026/11/02 09:00:00' }
+        ];
+      }
+
+      renderFeatured(allSongs);
+      lucide.createIcons();
     }
 
-    function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
-    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
-    function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
-    function closeMobileMenu() { document.getElementById('mobileMenu').classList.add('hidden'); }
+    function renderFeatured(songs) {
+      const container = document.getElementById('featuredContainer');
+      if (!container) return;
 
+      // 再生数順などで上位3曲をピックアップ
+      const topSongs = [...songs].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
+
+      container.innerHTML = topSongs.map(s => `
+        <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 block transition space-y-2 shadow-md group">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="text-cyan-400 font-bold">ID: ${escapeHTML(s.video_id)}</span>
+            <span>${(s.views || 0).toLocaleString()}回再生</span>
+          </div>
+          <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-1">${escapeHTML(s.title)}</h4>
+          <p class="text-xs text-slate-400">増加量: +${(s.hourly_inclease || 0).toLocaleString()}</p>
+        </a>
+      `).join('');
+    }
+
+    // 検索機能
     function handleSearch(query) {
       const q = query.trim().toLowerCase();
       const resultsSection = document.getElementById('searchResultSection');
@@ -367,14 +273,23 @@
         return;
       }
 
-      const filtered = songs.filter(s => 
-        (s.clean_title || s.title).toLowerCase().includes(q) ||
-        s.producer.toLowerCase().includes(q) ||
-        (s.vocal && s.vocal.toLowerCase().includes(q))
+      const filtered = allSongs.filter(s => 
+        (s.title || '').toLowerCase().includes(q) ||
+        (s.video_id || '').toLowerCase().includes(q)
       );
 
       resultsSection.classList.remove('hidden');
-      container.innerHTML = filtered.length > 0 ? filtered.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400 col-span-full">該当する楽曲が見つかりませんでした。</p>';
+      container.innerHTML = filtered.length > 0 ? filtered.map(s => `
+        <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-4 block transition space-y-2 shadow-md">
+          <div class="text-xs text-cyan-400 font-bold">${escapeHTML(s.video_id)}</div>
+          <h4 class="font-bold text-white text-sm line-clamp-1">${escapeHTML(s.title)}</h4>
+          <div class="flex justify-between text-xs text-slate-400">
+            <span>${(s.views || 0).toLocaleString()}回再生</span>
+            <span class="text-cyan-400">詳細を見る →</span>
+          </div>
+        </a>
+      `).join('') : '<p class="text-xs text-slate-400 col-span-full">該当する楽曲が見つかりませんでした。</p>';
+
       lucide.createIcons();
     }
 
@@ -383,102 +298,11 @@
       document.getElementById('searchResultSection').classList.add('hidden');
     }
 
-    // 各カードから song.html?id=動画ID へリンクするように変更
-    function createSongCardHTML(song) {
-      return `
-        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-cyan-500/40 transition">
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-400">${escapeHTML(song.buzz_status || '通常')}</span>
-              <span class="text-xs text-slate-400">${song.views.toLocaleString()}回再生</span>
-            </div>
-            <a href="song.html?id=${song.video_id}" class="font-bold text-sm text-white hover:text-cyan-400 block line-clamp-1">${escapeHTML(song.title)}</a>
-            <p class="text-xs text-cyan-400">${escapeHTML(song.producer)}</p>
-          </div>
-          <div class="flex items-center justify-between pt-2 border-t border-slate-700/50 text-xs text-slate-400">
-            <span>24h: +${(song.increase_24h || 0).toLocaleString()}</span>
-            <a href="song.html?id=${song.video_id}" class="text-cyan-400 hover:underline">詳細・グラフ →</a>
-          </div>
-        </div>
-      `;
-    }
+    function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
+    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
 
-    function renderAll() {
-      // Home Featured
-      const featuredContainer = document.getElementById('featuredContainer');
-      if(featuredContainer) {
-        featuredContainer.innerHTML = songs.slice(0, 3).map(s => `
-          <div onclick="location.href='song.html?id=${s.video_id}'" class="min-w-[260px] max-w-[260px] bg-slate-800/90 border border-slate-700/70 rounded-xl p-3 cursor-pointer hover:border-cyan-500 transition space-y-2">
-            <div class="text-xs font-bold text-cyan-400">${escapeHTML(s.buzz_status)}</div>
-            <div class="font-bold text-sm text-white line-clamp-1">${escapeHTML(s.title)}</div>
-            <div class="text-xs text-slate-400">P名: ${escapeHTML(s.producer)}</div>
-            <div class="text-xs text-slate-300 font-semibold">${s.views.toLocaleString()}回再生</div>
-          </div>
-        `).join('');
-      }
-
-      // True Buzz
-      const trueBuzz = document.getElementById('trueBuzzContainer');
-      if(trueBuzz) {
-        const list = songs.filter(s => s.category === 'truebuzz');
-        trueBuzz.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
-      }
-
-      // New Release
-      const newRelease = document.getElementById('newReleaseContainer');
-      if(newRelease) {
-        const list = songs.filter(s => s.category === 'newrelease');
-        newRelease.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
-      }
-
-      // Forecast
-      const forecast = document.getElementById('forecastContainer');
-      if(forecast) {
-        forecast.innerHTML = songs.map(s => `
-          <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
-            <div class="text-xs text-purple-400 font-bold">🎯 目標: ${escapeHTML(s.target_milestone)}</div>
-            <a href="song.html?id=${s.video_id}" class="font-bold text-sm text-white hover:text-cyan-400 block line-clamp-1">${escapeHTML(s.title)}</a>
-            <div class="text-xs text-slate-400">現在の再生数: ${s.views.toLocaleString()}回</div>
-            <div class="text-xs text-slate-300">推計到達まで: あと約 <span class="text-cyan-400 font-bold">${s.estimated_days}</span> 日</div>
-          </div>
-        `).join('');
-      }
-
-      // Archive
-      const archive = document.getElementById('archiveContainer');
-      if(archive) {
-        const list = songs.filter(s => s.milestone_achieved);
-        archive.innerHTML = list.length ? list.map(s => `
-          <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
-            <div class="text-xs text-yellow-400 font-bold">${escapeHTML(s.milestone_achieved)}</div>
-            <a href="song.html?id=${s.video_id}" class="font-bold text-sm text-white hover:text-cyan-400 block line-clamp-1">${escapeHTML(s.title)}</a>
-            <div class="text-xs text-slate-400">ボカロP: ${escapeHTML(s.producer)}</div>
-            <div class="text-xs text-slate-300">最終再生数: ${s.views.toLocaleString()}回</div>
-          </div>
-        `).join('') : '<p class="text-xs text-slate-400">アーカイブ記録はありません。</p>';
-      }
-
-      // Ranking Top 100
-      const rankingBody = document.getElementById('rankingTableBody');
-      if(rankingBody) {
-        const sorted = [...songs].sort((a, b) => b.views - a.views);
-        rankingBody.innerHTML = sorted.map((s, idx) => `
-          <tr class="hover:bg-slate-700/30 transition">
-            <td class="p-3 text-center font-bold text-slate-400">${idx + 1}</td>
-            <td class="p-3">
-              <a href="song.html?id=${s.video_id}" class="font-medium text-white hover:text-cyan-400">${escapeHTML(s.title)}</a>
-            </td>
-            <td class="p-3 text-slate-300">${escapeHTML(s.producer)}</td>
-            <td class="p-3 text-right font-semibold text-cyan-400">${s.views.toLocaleString()}</td>
-            <td class="p-3 text-right text-slate-300">+${(s.increase_24h || 0).toLocaleString()}</td>
-          </tr>
-        `).join('');
-      }
-
-      lucide.createIcons();
-    }
-
-    window.onload = initData;
+    window.onload = initPortal;
   </script>
 </body>
 </html>
