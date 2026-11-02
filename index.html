@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VocaTracker</title>
+  <title>VocaTracker - ボカロ楽曲アナリティクス</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Content Security Policy -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
   <script>
@@ -73,7 +71,7 @@
         <button onclick="switchTab('newrelease')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="newrelease">新曲レーダー</button>
         <button onclick="switchTab('forecast')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="forecast">大台予測</button>
         <button onclick="switchTab('archive')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="archive">大台突破</button>
-        <button onclick="switchTab('ranking')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="ranking">ランキング (Top 100)</button>
+        <button onclick="switchTab('ranking')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition" data-tab="ranking">ランキング</button>
       </nav>
     </div>
 
@@ -84,7 +82,7 @@
       <button onclick="switchTab('newrelease')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🌱 New Release Radar</button>
       <button onclick="switchTab('forecast')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🎯 大台達成予測</button>
       <button onclick="switchTab('archive')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">🏆 大台突破アーカイブ</button>
-      <button onclick="switchTab('ranking')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">📊 総合ランキング (Top 100)</button>
+      <button onclick="switchTab('ranking')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800">📊 再生数ランキング</button>
       <button onclick="openModal('privacyModal')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-400 text-xs">プライバシーポリシー</button>
     </div>
   </header>
@@ -99,10 +97,10 @@
         <div class="max-w-3xl space-y-3">
           <div class="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-3 py-1 rounded-full text-xs">
             <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-            <span>VocaTracker Dashboard v2.3 (Firebase Auth Secured)</span>
+            <span>VocaTracker Dashboard v3.0 (Multi-Page Architecture)</span>
           </div>
           <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">ボカロシーンの「今」を掴むリアルタイム解析ポータル</h2>
-          <p class="text-sm text-slate-400">YouTube Data APIとBigQueryを活用し、急上昇曲の検知、大台予測、上位100曲ランキング、ユーザー参加型タグ付けを提供します。</p>
+          <p class="text-sm text-slate-400">YouTube Data APIとBigQueryを活用し、急上昇曲の検知、大台予測、上位100曲ランキングを提供します。</p>
         </div>
 
         <div class="mt-6">
@@ -123,7 +121,7 @@
             <span class="text-xs text-orange-400 font-semibold bg-orange-500/10 px-2 py-0.5 rounded">REALTIME</span>
           </div>
           <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">バズレーダー</h3>
-          <p class="text-xs text-slate-400 mt-1">3時間連続で勢い（MR・高評価加速）を判定した急上昇曲。</p>
+          <p class="text-xs text-slate-400 mt-1">3時間連続で勢いを判定した急上昇曲。</p>
         </div>
 
         <div onclick="switchTab('newrelease')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
@@ -134,7 +132,7 @@
             <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">14 DAYS</span>
           </div>
           <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">新曲レーダー</h3>
-          <p class="text-xs text-slate-400 mt-1">投稿14日以内、2万〜50万再生超を狙う期待の最新作。</p>
+          <p class="text-xs text-slate-400 mt-1">投稿14日以内の期待の最新作。</p>
         </div>
 
         <div onclick="switchTab('forecast')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
@@ -145,7 +143,7 @@
             <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-2 py-0.5 rounded">FORECAST</span>
           </div>
           <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">大台予測</h3>
-          <p class="text-xs text-slate-400 mt-1">100万回（殿堂入り）や1000万回突破の到達カウントダウン。</p>
+          <p class="text-xs text-slate-400 mt-1">100万回や1000万回突破の到達カウントダウン。</p>
         </div>
 
         <div onclick="switchTab('ranking')" class="bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/50 rounded-xl p-5 cursor-pointer transition group">
@@ -155,8 +153,8 @@
             </div>
             <span class="text-xs text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded">TOP 100</span>
           </div>
-          <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">総合ランキング</h3>
-          <p class="text-xs text-slate-400 mt-1">累積再生数に基づく上位100曲のランキング一覧。</p>
+          <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">再生数ランキング</h3>
+          <p class="text-xs text-slate-400 mt-1">累積再生数に基づく上位100曲のランキング。</p>
         </div>
       </div>
     </section>
@@ -167,7 +165,7 @@
         <h2 class="text-xl font-bold flex items-center gap-2 text-white">
           <i data-lucide="flame" class="text-orange-500"></i> True Buzz Radar
         </h2>
-        <p class="text-xs text-slate-400">3時間連続でMR>=1.2かつ高評価加速スコア>=1.3を満たした注目の急上昇楽曲</p>
+        <p class="text-xs text-slate-400">急上昇中の注目楽曲一覧</p>
       </div>
       <div id="trueBuzzContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
@@ -178,7 +176,7 @@
         <h2 class="text-xl font-bold flex items-center gap-2 text-white">
           <i data-lucide="zap" class="text-emerald-400"></i> New Release Radar
         </h2>
-        <p class="text-xs text-slate-400">投稿14日以内 / 2万〜50万再生超の期待のニューリリース楽曲</p>
+        <p class="text-xs text-slate-400">投稿14日以内の期待のニューリリース楽曲</p>
       </div>
       <div id="newReleaseContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
@@ -189,7 +187,7 @@
         <h2 class="text-xl font-bold flex items-center gap-2 text-white">
           <i data-lucide="target" class="text-purple-400"></i> 大台達成予測 (Milestone Forecast)
         </h2>
-        <p class="text-xs text-slate-400">直近の再生増加ペースから推計したミリオン・神話入り到達予測</p>
+        <p class="text-xs text-slate-400">ミリオン・神話入り到達予測</p>
       </div>
       <div id="forecastContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
@@ -200,7 +198,7 @@
         <h2 class="text-xl font-bold flex items-center gap-2 text-white">
           <i data-lucide="award" class="text-yellow-400"></i> 大台突破アーカイブ (Milestone Achieved)
         </h2>
-        <p class="text-xs text-slate-400">直近で100万回・1000万回再生の大台を突破した歴史的楽曲記録</p>
+        <p class="text-xs text-slate-400">100万回・1000万回再生を突破した歴史的楽曲記録</p>
       </div>
       <div id="archiveContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
@@ -210,9 +208,9 @@
       <div class="border-b border-slate-800 pb-4 flex items-center justify-between">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <i data-lucide="trophy" class="text-yellow-400"></i> 総合再生数ランキング (Top 100)
+            <i data-lucide="trophy" class="text-yellow-400"></i> 再生数ランキング
           </h2>
-          <p class="text-xs text-slate-400">累計再生数に基づく上位100曲の一覧です</p>
+          <p class="text-xs text-slate-400">累計再生数に基づく上位楽曲の一覧です</p>
         </div>
       </div>
 
@@ -226,7 +224,6 @@
                 <th class="p-3">ボカロP</th>
                 <th class="p-3 text-right">累計再生数</th>
                 <th class="p-3 text-right">24h増分</th>
-                <th class="p-3 text-center admin-only hidden">管理</th>
               </tr>
             </thead>
             <tbody id="rankingTableBody" class="divide-y divide-slate-700/50"></tbody>
@@ -255,154 +252,7 @@
       <button onclick="openModal('privacyModal')" class="hover:underline">プライバシーポリシー</button>
       <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" class="hover:underline">YouTube 利用規約</a>
     </div>
-    <div class="pt-2 border-t border-slate-800/60">
-      <span id="adminStatusIndicator" class="text-slate-400">🔒 一般閲覧モード</span>
-      <button onclick="handleAdminButtonClick()" id="adminLoginBtnText" class="ml-2 text-cyan-400 underline hover:text-cyan-300">管理者ログイン</button>
-    </div>
   </footer>
-
-  <!-- MODAL: SONG DETAIL -->
-  <div id="songDetailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5 relative">
-      <button onclick="closeModal('songDetailModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-        <i data-lucide="x" class="w-6 h-6"></i>
-      </button>
-
-      <div class="flex flex-col sm:flex-row gap-4 items-start">
-        <img id="detailThumb" src="" alt="" class="w-full sm:w-44 h-28 object-cover rounded-xl border border-slate-700">
-        <div class="space-y-1.5 flex-1">
-          <div id="detailCategoryBadge" class="inline-block px-2 py-0.5 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400">---</div>
-          <h3 id="detailTitle" class="text-lg font-bold text-white leading-snug">---</h3>
-          <p id="detailProducer" class="text-sm text-cyan-400 font-medium cursor-pointer hover:underline">---</p>
-          <div class="flex flex-wrap gap-2 text-xs text-slate-400 pt-1">
-            <span id="detailAge">経過日数: --</span>
-            <span>•</span>
-            <span id="detailLikeRate">いいね率: --%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Single Axis Chart Container -->
-      <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i> 累計再生数の推移（過去ログ）
-          </h4>
-          <span class="text-[10px] text-slate-500">過去30日間ログ</span>
-        </div>
-        <div class="h-44 w-full">
-          <canvas id="viewsChart"></canvas>
-        </div>
-      </div>
-
-      <!-- User Tags Section -->
-      <div class="space-y-2 bg-slate-900/50 p-3 rounded-xl border border-slate-700/40">
-        <div class="flex items-center justify-between">
-          <h4 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-            <i data-lucide="tag" class="w-3.5 h-3.5 text-cyan-400"></i> ユーザータグ
-          </h4>
-          <span class="text-[10px] text-slate-500">自由にタグを追加できます</span>
-        </div>
-        <div id="detailTagsContainer" class="flex flex-wrap gap-1.5"></div>
-        <div class="flex gap-2 pt-2">
-          <input type="text" id="newTagInput" placeholder="新しいタグを入力 (例: 神調教)" maxlength="20" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500">
-          <button onclick="addTagToCurrentSong()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition">追加</button>
-        </div>
-      </div>
-
-      <!-- Metadata Grid -->
-      <div class="grid grid-cols-2 gap-3 text-xs bg-slate-900/50 p-3 rounded-lg border border-slate-700/40">
-        <div><span class="text-slate-500">ボーカル:</span> <span id="detailVocal" class="text-slate-200">--</span></div>
-        <div><span class="text-slate-500">映像/イラスト:</span> <span id="detailMV" class="text-slate-200">--</span></div>
-        <div><span class="text-slate-500">MR (Momentum):</span> <span id="detailMR" class="text-slate-200">--</span></div>
-        <div><span class="text-slate-500">24h 再生増分:</span> <span id="detailIncrease" class="text-slate-200">--</span></div>
-      </div>
-
-      <div class="flex gap-2">
-        <a id="detailYTLink" href="#" target="_blank" rel="noopener" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-xl text-center text-sm transition flex items-center justify-center gap-2">
-          <i data-lucide="youtube" class="w-4 h-4"></i> YouTubeで試聴
-        </a>
-        <button id="detailEditBtn" onclick="" class="admin-only hidden bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-4 py-2 rounded-xl text-sm transition flex items-center justify-center gap-1.5">
-          <i data-lucide="edit-3" class="w-4 h-4"></i> 編集 (管理者)
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: PRODUCER DETAIL -->
-  <div id="producerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[85vh] overflow-y-auto p-6 space-y-4 relative">
-      <button onclick="closeModal('producerModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-        <i data-lucide="x" class="w-6 h-6"></i>
-      </button>
-      <div class="border-b border-slate-700 pb-3">
-        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">PRODUCER ARCHIVE</span>
-        <h3 id="producerName" class="text-xl font-bold text-white">---</h3>
-      </div>
-      <div class="space-y-2">
-        <h4 class="text-xs font-semibold text-slate-400">登録済み楽曲一覧</h4>
-        <div id="producerSongList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: FIREBASE ADMIN LOGIN -->
-  <div id="adminLoginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 space-y-4 relative">
-      <button onclick="closeModal('adminLoginModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-        <i data-lucide="x" class="w-6 h-6"></i>
-      </button>
-      <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <i data-lucide="shield-check" class="w-5 h-5 text-cyan-400"></i> 管理者認証
-      </h3>
-      <p class="text-xs text-slate-400">Firebase 管理者アカウントのメールアドレスとパスワードを入力してください。</p>
-      
-      <form onsubmit="handleFirebaseLogin(event)" class="space-y-3">
-        <input type="email" id="adminEmailInput" placeholder="admin@example.com" required 
-               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
-        <input type="password" id="adminPasswordInput" placeholder="パスワード" required 
-               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
-        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2 rounded-lg text-sm transition">
-          ログインする
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: EDIT TITLE & CREDITS (ADMIN ONLY) -->
-  <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 space-y-4 relative">
-      <button onclick="closeModal('editModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-        <i data-lucide="x" class="w-6 h-6"></i>
-      </button>
-      <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <i data-lucide="edit-3" class="w-5 h-5 text-cyan-400"></i> メタデータ編集 (管理者限定)
-      </h3>
-      <form id="editForm" onsubmit="saveCredits(event)" class="space-y-3 text-sm">
-        <input type="hidden" id="editVideoId">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">表示用タイトル</label>
-          <input type="text" id="editTitleInput" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">ボカロP / アーティスト名</label>
-          <input type="text" id="editProducerInput" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">使用ボーカル</label>
-          <input type="text" id="editVocalInput" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">イラスト / MV制作者</label>
-          <input type="text" id="editMVInput" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500">
-        </div>
-        <div class="pt-2 flex justify-end gap-2">
-          <button type="button" onclick="closeModal('editModal')" class="px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600">キャンセル</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500">保存</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- MODAL: PRIVACY POLICY -->
   <div id="privacyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -417,62 +267,6 @@
     </div>
   </div>
 
-  <!-- Firebase SDK & 認証ロジック一体型 -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
-      authDomain: "vocaloid-song-trackar.firebaseapp.com",
-      projectId: "youtube-vocaloid-song-trackar",
-      storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
-      messagingSenderId: "543125801305",
-      appId: "1:543125801305:web:7556f46309f798105f6448",
-      measurementId: "G-L6NMKP7QQQ"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const auth = getAuth(app);
-
-    // ログイン関数をモジュール内で直接定義してグローバルに登録
-    window.handleFirebaseLogin = async function(e) {
-      e.preventDefault();
-      const email = document.getElementById('adminEmailInput').value;
-      const password = document.getElementById('adminPasswordInput').value;
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        closeModal('adminLoginModal');
-        document.getElementById('adminEmailInput').value = '';
-        document.getElementById('adminPasswordInput').value = '';
-        alert('管理者としてログインしました。');
-      } catch (error) {
-        alert(`ログイン失敗:\nコード: ${error.code}\n内容: ${error.message}`);
-        console.error("Firebase Login Error:", error);
-      }
-    };
-
-    window.handleFirebaseSignOut = async function() {
-      try {
-        await signOut(auth);
-        alert('ログアウトしました。');
-      } catch (error) {
-        console.error("ログアウトエラー:", error);
-      }
-    };
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        if (typeof window.setAdminMode === 'function') window.setAdminMode(true);
-      } else {
-        if (typeof window.setAdminMode === 'function') window.setAdminMode(false);
-      }
-    });
-  </script>
-
   <script>
     const initialSongs = [
       {
@@ -481,21 +275,13 @@
         clean_title: 'メズマライザー',
         producer: 'サツキ',
         vocal: '初音ミク, 重音テト',
-        mv_creator: 'Channel (MV)',
         views: 9400000,
         increase_24h: 180000,
-        mr: 2.35,
-        like_acceleration: 1.8,
-        like_rate: 3.4,
-        video_age_days: 120,
         category: 'truebuzz',
         buzz_status: '🔥 大ヒット',
-        history_views: [8200000, 8400000, 8600000, 8800000, 9000000, 9200000, 9400000],
         target_milestone: '1000万回（神話入り）',
-        target_views: 10000000,
         estimated_days: 4,
-        milestone_achieved: null,
-        tags: ['神調教', '中毒性', 'ボカコレ']
+        milestone_achieved: null
       },
       {
         video_id: 'a1234567890',
@@ -503,21 +289,13 @@
         clean_title: '新世代のレボリューション',
         producer: 'MikuP',
         vocal: '初音ミク',
-        mv_creator: '創作者A',
         views: 820000,
         increase_24h: 85000,
-        mr: 1.65,
-        like_acceleration: 1.45,
-        like_rate: 2.1,
-        video_age_days: 5,
         category: 'newrelease',
         buzz_status: '⚡ 大注目',
-        history_views: [300000, 400000, 500000, 600000, 680000, 750000, 820000],
         target_milestone: '100万回（殿堂入り）',
-        target_views: 1000000,
         estimated_days: 3,
-        milestone_achieved: null,
-        tags: ['ロック', 'ギターソロ']
+        milestone_achieved: null
       },
       {
         video_id: 'b0987654321',
@@ -525,28 +303,17 @@
         clean_title: 'サイバー・ディストピア',
         producer: 'ElectroProducer',
         vocal: '巡音ルカ',
-        mv_creator: 'CG-Studio',
         views: 1050000,
         increase_24h: 120000,
-        mr: 2.1,
-        like_acceleration: 1.9,
-        like_rate: 4.2,
-        video_age_days: 11,
         category: 'newrelease',
         buzz_status: '🔥 超新星',
-        history_views: [400000, 520000, 650000, 780000, 890000, 980000, 1050000],
         target_milestone: '100万回（殿堂入り）',
-        target_views: 1000000,
         estimated_days: 0,
-        milestone_achieved: '🎉 100万回達成 (2026/10/28)',
-        tags: ['EDM', 'ルカ姉', 'おしゃれ']
+        milestone_achieved: '🎉 100万回達成 (2026/10/28)'
       }
     ];
 
     let songs = [];
-    let viewsChart = null;
-    let isAdmin = false;
-    let currentDetailVideoId = null;
 
     function escapeHTML(str) {
       if (!str) return '';
@@ -569,40 +336,6 @@
     function saveToStorage() {
       localStorage.setItem('vocaloid_tracker_songs_v3', JSON.stringify(songs));
     }
-
-    function handleAdminButtonClick() {
-      if (isAdmin) {
-        if (typeof window.handleFirebaseSignOut === 'function') {
-          window.handleFirebaseSignOut();
-        }
-      } else {
-        openModal('adminLoginModal');
-      }
-    }
-
-    function setAdminMode(status) {
-      isAdmin = status;
-      const indicator = document.getElementById('adminStatusIndicator');
-      const btnText = document.getElementById('adminLoginBtnText');
-      const adminElements = document.querySelectorAll('.admin-only');
-
-      if (isAdmin) {
-        if(indicator) {
-          indicator.innerText = '🛡️ 管理者モード作動中';
-          indicator.className = 'text-cyan-400 font-bold';
-        }
-        if(btnText) btnText.innerText = 'ログアウト';
-        adminElements.forEach(el => el.classList.remove('hidden'));
-      } else {
-        if(indicator) {
-          indicator.innerText = '🔒 一般閲覧モード';
-          indicator.className = 'text-slate-400';
-        }
-        if(btnText) btnText.innerText = '管理者ログイン';
-        adminElements.forEach(el => el.classList.add('hidden'));
-      }
-    }
-    window.setAdminMode = setAdminMode;
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -637,8 +370,7 @@
       const filtered = songs.filter(s => 
         (s.clean_title || s.title).toLowerCase().includes(q) ||
         s.producer.toLowerCase().includes(q) ||
-        (s.vocal && s.vocal.toLowerCase().includes(q)) ||
-        (s.tags && s.tags.some(t => t.toLowerCase().includes(q)))
+        (s.vocal && s.vocal.toLowerCase().includes(q))
       );
 
       resultsSection.classList.remove('hidden');
@@ -651,6 +383,7 @@
       document.getElementById('searchResultSection').classList.add('hidden');
     }
 
+    // 各カードから song.html?id=動画ID へリンクするように変更
     function createSongCardHTML(song) {
       return `
         <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-cyan-500/40 transition">
@@ -659,22 +392,23 @@
               <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-400">${escapeHTML(song.buzz_status || '通常')}</span>
               <span class="text-xs text-slate-400">${song.views.toLocaleString()}回再生</span>
             </div>
-            <h4 onclick="openSongDetail('${song.video_id}')" class="font-bold text-sm text-white hover:text-cyan-400 cursor-pointer line-clamp-1">${escapeHTML(song.title)}</h4>
-            <p onclick="openProducerDetail('${escapeHTML(song.producer)}')" class="text-xs text-cyan-400 cursor-pointer hover:underline">${escapeHTML(song.producer)}</p>
+            <a href="song.html?id=${song.video_id}" class="font-bold text-sm text-white hover:text-cyan-400 block line-clamp-1">${escapeHTML(song.title)}</a>
+            <p class="text-xs text-cyan-400">${escapeHTML(song.producer)}</p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-slate-700/50 text-xs text-slate-400">
             <span>24h: +${(song.increase_24h || 0).toLocaleString()}</span>
-            <button onclick="openSongDetail('${song.video_id}')" class="text-cyan-400 hover:underline">詳細・グラフ</button>
+            <a href="song.html?id=${song.video_id}" class="text-cyan-400 hover:underline">詳細・グラフ →</a>
           </div>
         </div>
       `;
     }
 
     function renderAll() {
+      // Home Featured
       const featuredContainer = document.getElementById('featuredContainer');
       if(featuredContainer) {
         featuredContainer.innerHTML = songs.slice(0, 3).map(s => `
-          <div onclick="openSongDetail('${s.video_id}')" class="min-w-[260px] max-w-[260px] bg-slate-800/90 border border-slate-700/70 rounded-xl p-3 cursor-pointer hover:border-cyan-500 transition space-y-2">
+          <div onclick="location.href='song.html?id=${s.video_id}'" class="min-w-[260px] max-w-[260px] bg-slate-800/90 border border-slate-700/70 rounded-xl p-3 cursor-pointer hover:border-cyan-500 transition space-y-2">
             <div class="text-xs font-bold text-cyan-400">${escapeHTML(s.buzz_status)}</div>
             <div class="font-bold text-sm text-white line-clamp-1">${escapeHTML(s.title)}</div>
             <div class="text-xs text-slate-400">P名: ${escapeHTML(s.producer)}</div>
@@ -683,43 +417,48 @@
         `).join('');
       }
 
+      // True Buzz
       const trueBuzz = document.getElementById('trueBuzzContainer');
       if(trueBuzz) {
         const list = songs.filter(s => s.category === 'truebuzz');
         trueBuzz.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
       }
 
+      // New Release
       const newRelease = document.getElementById('newReleaseContainer');
       if(newRelease) {
         const list = songs.filter(s => s.category === 'newrelease');
         newRelease.innerHTML = list.length ? list.map(s => createSongCardHTML(s)).join('') : '<p class="text-xs text-slate-400">現在該当する楽曲はありません。</p>';
       }
 
+      // Forecast
       const forecast = document.getElementById('forecastContainer');
       if(forecast) {
         forecast.innerHTML = songs.map(s => `
           <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
             <div class="text-xs text-purple-400 font-bold">🎯 目標: ${escapeHTML(s.target_milestone)}</div>
-            <h4 onclick="openSongDetail('${s.video_id}')" class="font-bold text-sm text-white cursor-pointer hover:text-cyan-400 line-clamp-1">${escapeHTML(s.title)}</h4>
+            <a href="song.html?id=${s.video_id}" class="font-bold text-sm text-white hover:text-cyan-400 block line-clamp-1">${escapeHTML(s.title)}</a>
             <div class="text-xs text-slate-400">現在の再生数: ${s.views.toLocaleString()}回</div>
             <div class="text-xs text-slate-300">推計到達まで: あと約 <span class="text-cyan-400 font-bold">${s.estimated_days}</span> 日</div>
           </div>
         `).join('');
       }
 
+      // Archive
       const archive = document.getElementById('archiveContainer');
       if(archive) {
         const list = songs.filter(s => s.milestone_achieved);
         archive.innerHTML = list.length ? list.map(s => `
           <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 space-y-2">
             <div class="text-xs text-yellow-400 font-bold">${escapeHTML(s.milestone_achieved)}</div>
-            <h4 onclick="openSongDetail('${s.video_id}')" class="font-bold text-sm text-white cursor-pointer hover:text-cyan-400 line-clamp-1">${escapeHTML(s.title)}</h4>
+            <a href="song.html?id=${s.video_id}" class="font-bold text-sm text-white hover:text-cyan-400 block line-clamp-1">${escapeHTML(s.title)}</a>
             <div class="text-xs text-slate-400">ボカロP: ${escapeHTML(s.producer)}</div>
             <div class="text-xs text-slate-300">最終再生数: ${s.views.toLocaleString()}回</div>
           </div>
         `).join('') : '<p class="text-xs text-slate-400">アーカイブ記録はありません。</p>';
       }
 
+      // Ranking Top 100
       const rankingBody = document.getElementById('rankingTableBody');
       if(rankingBody) {
         const sorted = [...songs].sort((a, b) => b.views - a.views);
@@ -727,161 +466,16 @@
           <tr class="hover:bg-slate-700/30 transition">
             <td class="p-3 text-center font-bold text-slate-400">${idx + 1}</td>
             <td class="p-3">
-              <span onclick="openSongDetail('${s.video_id}')" class="font-medium text-white hover:text-cyan-400 cursor-pointer">${escapeHTML(s.title)}</span>
+              <a href="song.html?id=${s.video_id}" class="font-medium text-white hover:text-cyan-400">${escapeHTML(s.title)}</a>
             </td>
             <td class="p-3 text-slate-300">${escapeHTML(s.producer)}</td>
             <td class="p-3 text-right font-semibold text-cyan-400">${s.views.toLocaleString()}</td>
             <td class="p-3 text-right text-slate-300">+${(s.increase_24h || 0).toLocaleString()}</td>
-            <td class="p-3 text-center admin-only hidden">
-              <button onclick="openEditModal('${s.video_id}')" class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-slate-200">編集</button>
-            </td>
           </tr>
         `).join('');
       }
 
       lucide.createIcons();
-    }
-
-    function openSongDetail(videoId) {
-      const song = songs.find(s => s.video_id === videoId);
-      if (!song) return;
-      currentDetailVideoId = videoId;
-
-      document.getElementById('detailThumb').src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-      document.getElementById('detailCategoryBadge').innerText = song.buzz_status || '楽曲詳細';
-      document.getElementById('detailTitle').innerText = song.title;
-      const prodEl = document.getElementById('detailProducer');
-      prodEl.innerText = song.producer;
-      prodEl.onclick = () => { closeModal('songDetailModal'); openProducerDetail(song.producer); };
-
-      document.getElementById('detailAge').innerText = `経過日数: ${song.video_age_days || '--'}日`;
-      document.getElementById('detailLikeRate').innerText = `いいね率: ${song.like_rate || '--'}%`;
-      document.getElementById('detailVocal').innerText = song.vocal || '未設定';
-      document.getElementById('detailMV').innerText = song.mv_creator || '未設定';
-      document.getElementById('detailMR').innerText = song.mr || '--';
-      document.getElementById('detailIncrease').innerText = `+${(song.increase_24h || 0).toLocaleString()}`;
-      document.getElementById('detailYTLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-
-      const editBtn = document.getElementById('detailEditBtn');
-      editBtn.onclick = () => openEditModal(videoId);
-
-      renderDetailTags(song);
-      openModal('songDetailModal');
-      renderViewsChart(song.history_views || [song.views]);
-    }
-
-    function renderDetailTags(song) {
-      const container = document.getElementById('detailTagsContainer');
-      const tags = song.tags || [];
-      container.innerHTML = tags.length ? tags.map(t => `
-        <span class="inline-flex items-center gap-1 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-xs text-slate-300">
-          #${escapeHTML(t)}
-          ${isAdmin ? `<button onclick="removeTag('${song.video_id}', '${t}')" class="text-slate-500 hover:text-red-400">×</button>` : ''}
-        </span>
-      `).join('') : '<span class="text-xs text-slate-500">タグはまだありません</span>';
-    }
-
-    function addTagToCurrentSong() {
-      const input = document.getElementById('newTagInput');
-      const val = input.value.trim();
-      if (!val || !currentDetailVideoId) return;
-
-      const song = songs.find(s => s.video_id === currentDetailVideoId);
-      if (song) {
-        if (!song.tags) song.tags = [];
-        if (!song.tags.includes(val)) {
-          song.tags.push(val);
-          saveToStorage();
-          renderDetailTags(song);
-          renderAll();
-        }
-        input.value = '';
-      }
-    }
-
-    function removeTag(videoId, tag) {
-      const song = songs.find(s => s.video_id === videoId);
-      if (song && song.tags) {
-        song.tags = song.tags.filter(t => t !== tag);
-        saveToStorage();
-        renderDetailTags(song);
-        renderAll();
-      }
-    }
-
-    function renderViewsChart(historyViews) {
-      const ctx = document.getElementById('viewsChart').getContext('2d');
-      if (viewsChart) viewsChart.destroy();
-
-      viewsChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: historyViews.map((_, i) => `-${historyViews.length - 1 - i}日前`),
-          datasets: [{
-            label: '累計再生数',
-            data: historyViews,
-            borderColor: '#06b6d4',
-            backgroundColor: 'rgba(6, 182, 212, 0.1)',
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } },
-            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } }
-          }
-        }
-      });
-    }
-
-    function openProducerDetail(producerName) {
-      document.getElementById('producerName').innerText = producerName;
-      const listContainer = document.getElementById('producerSongList');
-      const prodSongs = songs.filter(s => s.producer === producerName);
-
-      listContainer.innerHTML = prodSongs.length ? prodSongs.map(s => `
-        <div onclick="closeModal('producerModal'); openSongDetail('${s.video_id}')" class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:border-cyan-500 transition flex justify-between items-center text-xs">
-          <span class="font-medium text-white truncate max-w-[240px]">${escapeHTML(s.title)}</span>
-          <span class="text-cyan-400">${s.views.toLocaleString()}回</span>
-        </div>
-      `).join('') : '<p class="text-xs text-slate-400">登録曲がありません。</p>';
-
-      openModal('producerModal');
-    }
-
-    function openEditModal(videoId) {
-      const song = songs.find(s => s.video_id === videoId);
-      if (!song) return;
-
-      document.getElementById('editVideoId').value = videoId;
-      document.getElementById('editTitleInput').value = song.title;
-      document.getElementById('editProducerInput').value = song.producer;
-      document.getElementById('editVocalInput').value = song.vocal || '';
-      document.getElementById('editMVInput').value = song.mv_creator || '';
-
-      closeModal('songDetailModal');
-      openModal('editModal');
-    }
-
-    function saveCredits(e) {
-      e.preventDefault();
-      const videoId = document.getElementById('editVideoId').value;
-      const song = songs.find(s => s.video_id === videoId);
-
-      if (song) {
-        song.title = document.getElementById('editTitleInput').value;
-        song.producer = document.getElementById('editProducerInput').value;
-        song.vocal = document.getElementById('editVocalInput').value;
-        song.mv_creator = document.getElementById('editMVInput').value;
-        saveToStorage();
-        renderAll();
-        closeModal('editModal');
-        alert('メタデータを更新しました。');
-      }
     }
 
     window.onload = initData;
