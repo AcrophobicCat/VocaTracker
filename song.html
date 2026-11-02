@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>楽曲詳細 - VocaTracker</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.google.com https://*.googleapis.com 'unsafe-inline';">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#0f172a',
+            cardbg: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+  </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 text-sm font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>トップページ（一覧）に戻る</span>
+      </a>
+      <span id="adminStatusIndicator" class="text-xs text-slate-400">🔒 一般閲覧モード</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+    
+    <!-- Song Header Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start gap-4">
+      <div class="space-y-2 flex-1 w-full">
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="songStatusBadge" class="px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400">楽曲詳細</span>
+          <span id="videoIdDisplay" class="text-xs text-slate-500 font-mono">ID: ---</span>
+        </div>
+
+        <!-- タイトル（管理者モード等で編集可能にするエリア） -->
+        <div>
+          <h1 id="songTitle" class="text-xl md:text-2xl font-extrabold text-white leading-snug">読み込み中...</h1>
+        </div>
+
+        <p class="text-sm text-cyan-400 font-medium">ボカロP: <span id="songProducer" class="underline cursor-pointer">---</span></p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a id="youtubeLink" href="#" target="_blank" rel="noopener" class="bg-red-600 hover:bg-red-700 text-white text-xs font-medium py-2.5 px-4 rounded-xl transition flex items-center gap-1.5 shadow-lg">
+          <i data-lucide="youtube" class="w-4 h-4"></i> YouTubeで視聴
+        </a>
+      </div>
+    </div>
+
+    <!-- Looker Studio Embedded Report Section -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-400"></i> リアルタイム推移・統計データ
+        </h3>
+        <span class="text-[10px] text-slate-500">Powered by Looker Studio</span>
+      </div>
+
+      <!-- 埋め込み用 iframe (JavaScriptで動的にsrcを生成して流し込みます) -->
+      <div class="w-full overflow-hidden rounded-xl bg-slate-950 flex justify-center">
+        <iframe id="lsReportFrame" width="100%" height="700" src="" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Script for Dynamic URL Parameter & Data Binding -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get('id');
+
+    function initSongPage() {
+      if (!videoId) {
+        document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
+        document.getElementById('lsReportFrame').style.display = 'none';
+        return;
+      }
+
+      // 1. ローカルストレージまたは初期データから該当曲のメタ情報を取得して表示
+      const songs = JSON.parse(localStorage.getItem('vocaloid_tracker_songs_v3')) || [];
+      const song = songs.find(s => s.video_id === videoId);
+
+      if (song) {
+        document.getElementById('songTitle').innerText = song.title;
+        document.getElementById('songProducer').innerText = song.producer;
+        document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
+        document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+        if (song.buzz_status) {
+          document.getElementById('songStatusBadge').innerText = song.buzz_status;
+        }
+      } else {
+        document.getElementById('songTitle').innerText = `動画ID: ${videoId}`;
+        document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
+        document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+      }
+
+      // 2. Looker Studioの埋め込みURLにURLパラメータ（video_id）を動的に付与する
+      const baseEmbedUrl = "https://lookerstudio.google.com/embed/reporting/dee6275d-69c1-467c-b8bd-898bdb5d44d1/page/rI15F";
+      
+      // Looker Studioのフィルタパラメータ構造（ds0等のデータソース名に合わせて調整可能）
+      const paramData = {
+        "ds0": {
+          "video_id": [videoId]
+        }
+      };
+      
+      const encodedParams = encodeURIComponent(JSON.stringify(paramData));
+      const finalUrl = `${baseEmbedUrl}?params=${encodedParams}`;
+      
+      // iframeに反映
+      document.getElementById('lsReportFrame').src = finalUrl;
+    }
+
+    window.onload = () => {
+      initSongPage();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
