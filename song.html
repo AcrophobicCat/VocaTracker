@@ -125,7 +125,7 @@
       </div>
     </div>
 
-    <!-- 🏷️ タグ管理セクション (3分類 + それぞれサジェスト＆個別追加・削除対応) -->
+    <!-- 🏷️ タグ管理セクション -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
         <i data-lucide="tag" class="w-4 h-4 text-cyan-400"></i> タグ情報
@@ -133,34 +133,35 @@
 
       <div class="space-y-4 text-sm">
         
-        <!-- ① ボーカルタグ（候補つき・追加削除対応） -->
+        <!-- ① 使用ボーカルタグ（管理者のみ編集可能） -->
         <div class="space-y-2">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs text-slate-400 w-24 shrink-0 font-bold">使用ボーカル:</span>
             <div id="vocalTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
           </div>
-          <!-- 管理者用または誰でも追加できる入力フォーム（お好みで全員追加OKにしています） -->
-          <div class="flex items-center gap-1.5 pl-0 sm:pl-24">
-            <input type="text" id="newVocalTagInput" list="vocalMasterList" placeholder="ボーカルを追加 (例: 初音ミク)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-purple-500 max-w-xs w-full">
+          <!-- 管理者用追加フォーム -->
+          <div id="vocalEditContainer" class="hidden flex items-center gap-1.5 pl-0 sm:pl-24">
+            <input type="text" id="newVocalTagInput" list="vocalMasterList" placeholder="ボーカルを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-purple-500 max-w-xs w-full">
             <datalist id="vocalMasterList"></datalist>
             <button onclick="addTag('vocal')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
 
-        <!-- ② クレジットタグ（候補つき・追加削除対応） -->
+        <!-- ② クレジットタグ（管理者のみ編集可能） -->
         <div class="space-y-2 pt-2 border-t border-slate-800/80">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs text-slate-400 w-24 shrink-0 font-bold">クレジット:</span>
             <div id="creditTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
           </div>
-          <div class="flex items-center gap-1.5 pl-0 sm:pl-24">
-            <input type="text" id="newCreditTagInput" list="creditMasterList" placeholder="クレジットを追加 (例: Music: 〇〇P)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 max-w-xs w-full">
+          <!-- 管理者用追加フォーム -->
+          <div id="creditEditContainer" class="hidden flex items-center gap-1.5 pl-0 sm:pl-24">
+            <input type="text" id="newCreditTagInput" list="creditMasterList" placeholder="クレジットを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 max-w-xs w-full">
             <datalist id="creditMasterList"></datalist>
             <button onclick="addTag('credit')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
 
-        <!-- ③ フリータグ（候補付き・追加、削除は管理者のみ） -->
+        <!-- ③ フリータグ（追加は誰でもOK、削除は管理者のみ） -->
         <div class="space-y-2 pt-2 border-t border-slate-800/80">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs text-slate-400 w-24 shrink-0 font-bold pt-1">フリータグ:</span>
@@ -222,12 +223,12 @@
       </div>
     </div>
 
-    <!-- Historical Data Table -->
+    <!-- Historical Data Table (過去30日分表示) -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表 (直近30件)
+            <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表 (過去30日分)
           </h3>
           <span id="tableFilterStatus" class="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded hidden"></span>
         </div>
@@ -235,7 +236,7 @@
           フィルター解除（全表示）
         </button>
       </div>
-      <div class="overflow-x-auto max-h-80">
+      <div class="overflow-x-auto max-h-96">
         <table class="w-full text-left text-xs text-slate-300">
           <thead class="bg-slate-800/60 text-slate-400 uppercase sticky top-0">
             <tr>
@@ -283,26 +284,21 @@
     let dailyBarChartInstance = null;
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
 
-    // 🌟 日時フォーマット関数（BigQueryのタイムスタンプや数値・文字列を「YYYY/MM/DD HH:MM:SS」に綺麗に変換）
     function formatDateTime(rawDate) {
       if (!rawDate) return '---';
-      
-      // すでにスラッシュ区切りのフォーマットならそのまま返す
       if (typeof rawDate === 'string' && rawDate.includes('/')) {
         return rawDate;
       }
 
       let d = new Date(rawDate);
-      // もし数値（エポック秒やミリ秒）の場合の判定
       if (isNaN(d.getTime()) && !isNaN(Number(rawDate))) {
         let num = Number(rawDate);
-        // 秒単位（10桁程度）ならミリ秒に変換
         if (num < 10000000000) num *= 1000;
         d = new Date(num);
       }
 
       if (isNaN(d.getTime())) {
-        return String(rawDate); // 変換できなければ元の文字列
+        return String(rawDate);
       }
 
       const yyyy = d.getFullYear();
@@ -342,7 +338,6 @@
         allLogs = JSON.parse(localStorage.getItem('vocaloid_tracker_logs_30d')) || getSampleLogs(videoId);
       }
 
-      // 日時を綺麗にパース・フォーマットして格納
       allLogsForSong = allLogs
         .filter(log => log.video_id === videoId)
         .map(log => ({
@@ -375,7 +370,6 @@
       document.getElementById('statHourlyInc').innerText = `+${(latest.hourly_inclease || 0).toLocaleString()}`;
       document.getElementById('statLikes').innerText = (latest.like_count || 0).toLocaleString();
 
-      // タグの読み込み ＆ サジェスト更新
       renderTags();
       updateTagSuggestions();
 
@@ -394,7 +388,9 @@
 
       renderViewsChart(labels, viewValues);
       renderDailyBarChart(dailyLabels, dailyValues, chronologicalLogs);
-      renderLogTable(allLogsForSong.slice(0, 30));
+      
+      // 🌟 過去30日分のデータをすべてテーブルに表示（制限なし）
+      renderLogTable(allLogsForSong);
     }
 
     function toggleMobileMenu() {
@@ -402,7 +398,6 @@
       menu.classList.toggle('hidden');
     }
 
-    // 🏷️ 3分類タグ管理（ボーカル・クレジット・フリー）のロジック
     function getSongTags() {
       const allTags = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
       return allTags[videoId] || { 
@@ -417,8 +412,7 @@
       allTags[videoId] = tagsObj;
       localStorage.setItem('voca_song_tags', JSON.stringify(allTags));
 
-      // 各マスターリスト（サジェスト候補）の自動蓄積
-      updateMasterList('voca_master_vocal_tags', tagsObj.vocal, ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', 'kaai yuki', '重音テト']);
+      updateMasterList('voca_master_vocal_tags', tagsObj.vocal, ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', '重音テト']);
       updateMasterList('voca_master_credit_tags', tagsObj.credit, ['Music: サンプルP', 'Illustration: ゲスト', 'Mix: エンジニア']);
       updateMasterList('voca_master_free_tags', tagsObj.free, ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM']);
 
@@ -437,21 +431,21 @@
     function renderTags() {
       const tags = getSongTags();
       
-      // ① ボーカルタグ（削除は管理者のみ、または誰でもOKにしたい場合は調整可能）
+      // ① ボーカルタグ（削除・追加は管理者のみ）
       const vContainer = document.getElementById('vocalTagsContainer');
       vContainer.innerHTML = tags.vocal.map(t => {
         let deleteBtn = isAdminMode ? `<button onclick="removeTag('vocal', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
         return `<span class="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
       }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
-      // ② クレジットタグ
+      // ② クレジットタグ（削除・追加は管理者のみ）
       const cContainer = document.getElementById('creditTagsContainer');
       cContainer.innerHTML = tags.credit.map(t => {
         let deleteBtn = isAdminMode ? `<button onclick="removeTag('credit', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
         return `<span class="bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
       }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
-      // ③ フリータグ
+      // ③ フリータグ（追加は誰でもOK、削除は管理者のみ）
       const fContainer = document.getElementById('freeTagsContainer');
       fContainer.innerHTML = tags.free.map(t => {
         let deleteBtn = isAdminMode ? `<button onclick="removeTag('free', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
@@ -471,6 +465,8 @@
     }
 
     function addTag(type) {
+      if ((type === 'vocal' || type === 'credit') && !isAdminMode) return;
+      
       const inputId = type === 'vocal' ? 'newVocalTagInput' : (type === 'credit' ? 'newCreditTagInput' : 'newFreeTagInput');
       const input = document.getElementById(inputId);
       const val = input.value.trim();
@@ -491,7 +487,6 @@
       saveSongTags(tags);
     }
 
-    // 編集関連の関数群
     function enableProducerEdit() {
       const currentProducer = document.getElementById('songProducer').innerText;
       document.getElementById('editProducerInput').value = currentProducer;
@@ -526,6 +521,10 @@
       const mobileIndicator = document.getElementById('mobileAdminStatusIndicator');
       const editBtn = document.getElementById('editTitleBtn');
       const editProducerBtn = document.getElementById('editProducerBtn');
+      
+      // 🌟 管理者用タグ追加フォームの表示切替
+      const vocalEditContainer = document.getElementById('vocalEditContainer');
+      const creditEditContainer = document.getElementById('creditEditContainer');
 
       if (isAdminMode) {
         const text = '🔓 管理者モード';
@@ -536,6 +535,8 @@
         mobileIndicator.className = className;
         editBtn.classList.remove('hidden');
         editProducerBtn.classList.remove('hidden');
+        vocalEditContainer.classList.remove('hidden');
+        creditEditContainer.classList.remove('hidden');
       } else {
         const text = '🔒 一般閲覧モード';
         const className = 'text-xs text-slate-400';
@@ -545,6 +546,8 @@
         mobileIndicator.className = className;
         editBtn.classList.add('hidden');
         editProducerBtn.classList.add('hidden');
+        vocalEditContainer.classList.add('hidden');
+        creditEditContainer.classList.add('hidden');
         cancelTitleEdit();
         cancelProducerEdit();
       }
@@ -639,7 +642,7 @@
 
     function filterByDay(dayStr, chronologicalLogs) {
       const filtered = allLogsForSong.filter(l => l.updated_at.startsWith(dayStr));
-      renderLogTable(filtered.slice(0, 30));
+      renderLogTable(filtered);
 
       const statusBadge = document.getElementById('tableFilterStatus');
       statusBadge.innerText = `表示日: ${dayStr}`;
@@ -653,7 +656,7 @@
     }
 
     function resetFilter() {
-      renderLogTable(allLogsForSong.slice(0, 30));
+      renderLogTable(allLogsForSong);
       const chronologicalLogs = [...allLogsForSong].reverse();
       renderViewsChart(chronologicalLogs.map(l => l.updated_at), chronologicalLogs.map(l => l.views));
 
@@ -668,7 +671,7 @@
         return;
       }
       tbody.innerHTML = logs.map(log => `
-        <tr class="hover:bg-slate-800/40 --> transition">
+        <tr class="hover:bg-slate-800/40 transition">
           <td class="p-3 text-slate-400">${log.updated_at}</td>
           <td class="p-3 text-right font-medium text-slate-200">${(log.views || 0).toLocaleString()}</td>
           <td class="p-3 text-right text-cyan-400">+${(log.hourly_inclease || 0).toLocaleString()}</td>
