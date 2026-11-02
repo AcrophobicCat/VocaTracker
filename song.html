@@ -8,8 +8,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.google.com https://*.googleapis.com 'unsafe-inline';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -31,7 +33,7 @@
 
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
       <a href="index.html" class="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 text-sm font-medium">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         <span>トップページ（一覧）に戻る</span>
@@ -41,7 +43,7 @@
   </header>
 
   <!-- Main Content -->
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
     
     <!-- Song Header Card -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start gap-4">
@@ -51,7 +53,6 @@
           <span id="videoIdDisplay" class="text-xs text-slate-500 font-mono">ID: ---</span>
         </div>
 
-        <!-- タイトル（管理者モード等で編集可能にするエリア） -->
         <div>
           <h1 id="songTitle" class="text-xl md:text-2xl font-extrabold text-white leading-snug">読み込み中...</h1>
         </div>
@@ -66,24 +67,57 @@
       </div>
     </div>
 
-    <!-- Looker Studio Embedded Report Section -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+    <!-- Charts Grid Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- 累計再生数の推移グラフ -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
         <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-400"></i> リアルタイム推移・統計データ
+          <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i> 累計再生数の推移
         </h3>
-        <span class="text-[10px] text-slate-500">Powered by Looker Studio</span>
+        <div class="h-64 w-full">
+          <canvas id="viewsChart"></canvas>
+        </div>
       </div>
 
-      <!-- 埋め込み用 iframe (JavaScriptで動的にsrcを生成して流し込みます) -->
-      <div class="w-full overflow-hidden rounded-xl bg-slate-950 flex justify-center">
-        <iframe id="lsReportFrame" width="100%" height="700" src="" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <!-- 日間再生数（0:15基準）の棒グラフ -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> 1日の再生数 (0:15基準)
+        </h3>
+        <div class="h-64 w-full">
+          <canvas id="dailyBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historical Data Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表
+        </h3>
+        <span class="text-[10px] text-slate-500">直近のログ一覧</span>
+      </div>
+      <div class="overflow-x-auto max-h-80">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-800/60 text-slate-400 uppercase sticky top-0">
+            <tr>
+              <th class="p-3">確認日時</th>
+              <th class="p-3 text-right">再生数</th>
+              <th class="p-3 text-right">再生数の増加分</th>
+              <th class="p-3 text-right">高評価数</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody" class="divide-y divide-slate-800">
+            <!-- JavaScriptで動的に挿入されます -->
+          </tbody>
+        </table>
       </div>
     </div>
 
   </main>
 
-  <!-- Script for Dynamic URL Parameter & Data Binding -->
+  <!-- Script for Rendering Charts & Table -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = urlParams.get('id');
@@ -91,43 +125,106 @@
     function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
-        document.getElementById('lsReportFrame').style.display = 'none';
         return;
       }
 
-      // 1. ローカルストレージまたは初期データから該当曲のメタ情報を取得して表示
+      // ローカルストレージ等から該当曲のデータを取得（なければサンプルデータ）
       const songs = JSON.parse(localStorage.getItem('vocaloid_tracker_songs_v3')) || [];
-      const song = songs.find(s => s.video_id === videoId);
+      const song = songs.find(s => s.video_id === videoId) || {
+        video_id: videoId,
+        title: 'サンプル楽曲タイトル',
+        producer: 'サンプルP',
+        views: 230035917,
+        history_dates: ['10月3日', '10月8日', '10月13日', '10月18日', '10月23日', '10月28日', '11月2日'],
+        history_views: [224000000, 225000000, 226000000, 227000000, 228000000, 229000000, 230035917],
+        daily_dates: ['10/04', '10/07', '10/10', '10/13', '10/16', '10/19', '10/22', '10/25', '10/28', '10/31'],
+        daily_increases: [17000, 11000, 12500, 11000, 10500, 16000, 12000, 14000, 10000, 12500],
+        logs: [
+          { updated_at: '2026/11/02 9:00:25', views: 230035917, increase: 7771, likes: 2251047 },
+          { updated_at: '2026/11/02 8:00:30', views: 230028146, increase: 9454, likes: 2251023 },
+          { updated_at: '2026/11/02 7:00:40', views: 230018692, increase: 7481, likes: 2250979 },
+          { updated_at: '2026/11/02 6:00:14', views: 230011211, increase: 6892, likes: 2250946 },
+          { updated_at: '2026/11/02 5:00:18', views: 230004319, increase: 7588, likes: 2250905 }
+        ]
+      };
 
-      if (song) {
-        document.getElementById('songTitle').innerText = song.title;
-        document.getElementById('songProducer').innerText = song.producer;
-        document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
-        document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-        if (song.buzz_status) {
-          document.getElementById('songStatusBadge').innerText = song.buzz_status;
-        }
-      } else {
-        document.getElementById('songTitle').innerText = `動画ID: ${videoId}`;
-        document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
-        document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+      // ヘッダー情報の反映
+      document.getElementById('songTitle').innerText = song.title || `動画ID: ${videoId}`;
+      document.getElementById('songProducer').innerText = song.producer || '不明なP';
+      document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
+      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+      if (song.buzz_status) {
+        document.getElementById('songStatusBadge').innerText = song.buzz_status;
       }
 
-      // 2. Looker Studioの埋め込みURLにURLパラメータ（video_id）を動的に付与する
-      const baseEmbedUrl = "https://lookerstudio.google.com/embed/reporting/dee6275d-69c1-467c-b8bd-898bdb5d44d1/page/rI15F";
-      
-      // Looker Studioのフィルタパラメータ構造（ds0等のデータソース名に合わせて調整可能）
-      const paramData = {
-        "ds0": {
-          "video_id": [videoId]
+      // グラフとテーブルの描画
+      renderViewsChart(song.history_dates || [], song.history_views || []);
+      renderDailyBarChart(song.daily_dates || [], song.daily_increases || []);
+      renderLogTable(song.logs || []);
+    }
+
+    function renderViewsChart(labels, data) {
+      const ctx = document.getElementById('viewsChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '累計再生数',
+            data: data,
+            borderColor: '#06b6d4',
+            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
+          }
         }
-      };
-      
-      const encodedParams = encodeURIComponent(JSON.stringify(paramData));
-      const finalUrl = `${baseEmbedUrl}?params=${encodedParams}`;
-      
-      // iframeに反映
-      document.getElementById('lsReportFrame').src = finalUrl;
+      });
+    }
+
+    function renderDailyBarChart(labels, data) {
+      const ctx = document.getElementById('dailyBarChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '1日の再生数',
+            data: data,
+            backgroundColor: '#0ea5e9',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+    }
+
+    function renderLogTable(logs) {
+      const tbody = document.getElementById('logTableBody');
+      tbody.innerHTML = logs.map(log => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="p-3 text-slate-400">${log.updated_at}</td>
+          <td class="p-3 text-right font-medium text-slate-200">${log.views.toLocaleString()}</td>
+          <td class="p-3 text-right text-cyan-400">+${log.increase.toLocaleString()}</td>
+          <td class="p-3 text-right text-slate-300">${log.likes.toLocaleString()}</td>
+        </tr>
+      `).join('');
     }
 
     window.onload = () => {
