@@ -17,8 +17,8 @@
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
     <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
       <a href="index.html" class="flex items-center space-x-2 shrink-0">
-        <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white">
-          <i data-lucide="activity" class="w-5 h-5"></i>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+          <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
         </div>
         <span class="font-bold text-lg bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent hidden sm:inline">VocaTracker</span>
       </a>
@@ -47,7 +47,7 @@
         <p class="text-xs text-slate-400 mt-0.5"><span id="resultCount">0</span> 件の楽曲が見つかりました（トレンド最適化表示）</p>
       </div>
 
-      <!-- ソート切り替え（トレンド最適化をデフォルトに） -->
+      <!-- ソート切り替え -->
       <div class="flex items-center gap-2 text-xs">
         <span class="text-slate-400 shrink-0">並び替え:</span>
         <select id="sortSelect" onchange="applySortAndFilter()" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-cyan-500">
@@ -68,62 +68,72 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const query = (urlParams.get('q') || '').trim();
-    let searchDataset = [];
+    let uniqueSongsList = []; // 🌟 動画IDごとにユニーク化したリスト
 
     async function initSearchPage() {
       document.getElementById('searchInput').value = query;
       document.getElementById('searchKeywordDisplay').innerText = query || '全体トレンド';
 
+      let rawLogs = [];
       try {
         const response = await fetch('vocaloid_tracker_logs_30d.json');
         if (response.ok) {
-          searchDataset = await response.json();
+          rawLogs = await response.json();
         } else {
           throw new Error();
         }
       } catch (err) {
         // フォールバックサンプル
-        searchDataset = [
-          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, published_at: '2024-04-27' },
-          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, published_at: '2026-10-15' },
-          { video_id: 'b0987654321', title: 'サイバー・ディストピア', producer: 'ElectroProducer', views: 1050000, hourly_inclease: 120000, published_at: '2026-10-20' }
+        rawLogs = [
+          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, published_at: '2024-04-27', updated_at: '2026/11/02 10:00:00' },
+          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, published_at: '2026-10-15', updated_at: '2026/11/02 10:00:00' },
+          { video_id: 'b0987654321', title: 'サイバー・ディストピア', producer: 'ElectroProducer', views: 1050000, hourly_inclease: 120000, published_at: '2026-10-20', updated_at: '2026/11/02 10:00:00' }
         ];
       }
+
+      // 🌟 【重要】動画ID (video_id) ごとに最新のログ1件だけを抽出する処理
+      const songMap = {};
+      rawLogs.forEach(log => {
+        if (!log.video_id) return;
+        // まだ登録されていないか、既存のものより新しい日時であれば上書き
+        if (!songMap[log.video_id] || new Date(log.updated_at) > new Date(songMap[log.video_id].updated_at)) {
+          songMap[log.video_id] = log;
+        }
+      });
+      uniqueSongsList = Object.values(songMap);
 
       applySortAndFilter();
     }
 
-    /**
-     * 🌟 ニコニコ風トレンド・スコアリング関数
-     * 累計再生数だけでなく、「直近1時間の増加分（hourly_inclease）」や「投稿からの新しさ」に高い重みを与えてスコア化します。
-     */
     function calculateTrendScore(song) {
       const views = song.views || 0;
       const increase = song.hourly_inclease || 0;
       
-      // 投稿日からの経過日数に応じたフレッシュネスボーナス（新しいほど高得点）
       let freshnessBonus = 1.0;
       if (song.published_at) {
         const daysOld = (new Date() - new Date(song.published_at)) / (1000 * 60 * 60 * 24);
-        if (daysOld <= 7) freshnessBonus = 3.0;       // 1週間以内
-        else if (daysOld <= 30) freshnessBonus = 2.0;  // 1ヶ月以内
-        else if (daysOld <= 90) freshnessBonus = 1.5;  // 3ヶ月以内
+        if (daysOld <= 7) freshnessBonus = 3.0;
+        else if (daysOld <= 30) freshnessBonus = 2.0;
+        else if (daysOld <= 90) freshnessBonus = 1.5;
       }
 
-      // トレンドスコア = (直近増加数 × 50) + (累計再生数 × 0.001) × フレッシュネスボーナス
       return (increase * 50 + views * 0.001) * freshnessBonus;
     }
 
     function applySortAndFilter() {
       const q = query.toLowerCase();
       
-      // キーワードで絞り込み (空白の場合は全件対象)
-      let filtered = searchDataset.filter(s => {
+      // キーワードで絞り込み
+      let filtered = uniqueSongsList.filter(s => {
+        const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+        const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
+        
+        const title = (customTitles[s.video_id] || s.title || '').toLowerCase();
+        const producer = (customProducers[s.video_id] || s.producer || '').toLowerCase();
+        const videoId = (s.video_id || '').toLowerCase();
+
         if (!q) return true;
-        return (s.title || '').toLowerCase().includes(q) ||
-               (s.producer || '').toLowerCase().includes(q) ||
-               (s.video_id || '').toLowerCase().includes(q) ||
-               (s.display_title || '').toLowerCase().includes(q);
+        return title.includes(q) || producer.includes(q) || videoId.includes(q);
       });
 
       // ソート処理
@@ -152,7 +162,7 @@
       const container = document.getElementById('resultsGrid');
       if (songs.length === 0) {
         container.innerHTML = `
-          <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-2">
+          <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-2 shadow-xl">
             <i data-lucide="search-x" class="w-8 h-8 text-slate-500 mx-auto"></i>
             <p class="text-sm font-medium text-slate-400">一致する楽曲が見つかりませんでした。</p>
             <p class="text-xs text-slate-500">別のキーワードやボカロP名でお試しください。</p>
@@ -162,19 +172,27 @@
         return;
       }
 
-      container.innerHTML = songs.map(s => `
-        <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 block transition space-y-3 shadow-md group">
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <span class="text-cyan-400 font-mono">ID: ${s.video_id}</span>
-            <span class="text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">+${(s.hourly_inclease || 0).toLocaleString()} /h</span>
-          </div>
-          <h3 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-2 leading-snug">${escapeHTML(s.title)}</h3>
-          <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
-            <span>P名: ${escapeHTML(s.producer || '不明')}</span>
-            <span class="font-semibold text-slate-300">${(s.views || 0).toLocaleString()} 回再生</span>
-          </div>
-        </a>
-      `).join('');
+      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+      const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
+
+      container.innerHTML = songs.map(s => {
+        const displayTitle = customTitles[s.video_id] || s.title || `動画ID: ${s.video_id}`;
+        const displayProducer = customProducers[s.video_id] || s.producer || '不明';
+
+        return `
+          <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 block transition space-y-3 shadow-md group">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span class="text-cyan-400 font-mono">ID: ${s.video_id}</span>
+              <span class="text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">+${(s.hourly_inclease || 0).toLocaleString()} /h</span>
+            </div>
+            <h3 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-2 leading-snug">${escapeHTML(displayTitle)}</h3>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+              <span>P名: ${escapeHTML(displayProducer)}</span>
+              <span class="font-semibold text-slate-300">${(s.views || 0).toLocaleString()} 回再生</span>
+            </div>
+          </a>
+        `;
+      }).join('');
 
       lucide.createIcons();
     }
