@@ -106,13 +106,13 @@
           <button id="editCreditBtn" onclick="editAdminTags('credit')" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">編集</button>
         </div>
 
-        <!-- ③ フリータグ（誰でも追加OK ＆ 既存タグ候補サジェスト付き） -->
+        <!-- ③ フリータグ（追加は誰でもOK、削除は管理者のみ） -->
         <div class="flex items-start gap-2 flex-wrap pt-2 border-t border-slate-800">
           <span class="text-xs text-slate-400 w-20 shrink-0 font-bold pt-1">フリータグ:</span>
           <div class="flex-1 space-y-2">
             <div id="freeTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
             
-            <!-- 追加入力フォーム -->
+            <!-- 追加入力フォーム（誰でも追加可能） -->
             <div class="flex items-center gap-1.5 max-w-xs">
               <input type="text" id="newFreeTagInput" list="existingTagsList" placeholder="タグを追加 (候補が出ます)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 w-full">
               <datalist id="existingTagsList"></datalist>
@@ -283,7 +283,6 @@
       allTags[videoId] = tagsObj;
       localStorage.setItem('voca_song_tags', JSON.stringify(allTags));
 
-      // フリータグの全体マスターリストも更新（サジェスト用）
       let masterFree = JSON.parse(localStorage.getItem('voca_master_free_tags')) || ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM'];
       tagsObj.free.forEach(t => {
         if (!masterFree.includes(t)) masterFree.push(t);
@@ -305,19 +304,20 @@
       const cContainer = document.getElementById('creditTagsContainer');
       cContainer.innerHTML = tags.credit.map(t => `<span class="bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full">${t}</span>`).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
-      // ③ フリー
+      // ③ フリー（管理者モードのときだけ削除ボタンを表示）
       const fContainer = document.getElementById('freeTagsContainer');
-      fContainer.innerHTML = tags.free.map(t => `<span class="bg-cyan-900/40 text-cyan-300 border border-cyan-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} <button onclick="removeFreeTag('${t}')" class="hover:text-red-400">×</button></span>`).join('') || '<span class="text-xs text-slate-500">タグなし</span>';
+      fContainer.innerHTML = tags.free.map(t => {
+        let deleteBtnHtml = isAdminMode ? `<button onclick="removeFreeTag('${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
+        return `<span class="bg-cyan-900/40 text-cyan-300 border border-cyan-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtnHtml}</span>`;
+      }).join('') || '<span class="text-xs text-slate-500">タグなし</span>';
     }
 
-    // サジェスト候補リストの更新
     function updateTagSuggestions() {
       const masterFree = JSON.parse(localStorage.getItem('voca_master_free_tags')) || ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM'];
       const datalist = document.getElementById('existingTagsList');
       datalist.innerHTML = masterFree.map(t => `<option value="${t}"></option>`).join('');
     }
 
-    // フリータグの追加（一般誰でも可能）
     function addFreeTag() {
       const input = document.getElementById('newFreeTagInput');
       const val = input.value.trim();
@@ -332,12 +332,12 @@
     }
 
     function removeFreeTag(tagToRemove) {
+      if (!isAdminMode) return; // 管理者以外は削除不可
       const tags = getSongTags();
       tags.free = tags.free.filter(t => t !== tagToRemove);
       saveSongTags(tags);
     }
 
-    // 管理者専用タグ編集（カンマ区切りで一括編集）
     function editAdminTags(type) {
       if (!isAdminMode) return;
       const tags = getSongTags();
@@ -355,6 +355,7 @@
       isAdminMode = !isAdminMode;
       localStorage.setItem('voca_admin_mode', isAdminMode);
       updateAdminUI();
+      renderTags(); // 管理者モード切り替え時にフリータグの削除ボタンの表示/非表示を即座に反映
     }
 
     function updateAdminUI() {
