@@ -80,11 +80,14 @@
       </div>
 
       <!-- 日間再生数（0:15基準）の棒グラフ -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
-        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> 1日の再生数 (0:15基準)
-        </h3>
-        <div class="h-64 w-full">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> 1日の再生数 (0:15基準)
+          </h3>
+          <span class="text-[10px] text-slate-400">※バーをクリックして絞り込み</span>
+        </div>
+        <div class="h-60 w-full">
           <canvas id="dailyBarChart"></canvas>
         </div>
       </div>
@@ -93,10 +96,15 @@
     <!-- Historical Data Table -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表
-        </h3>
-        <span class="text-[10px] text-slate-500">直近のログ一覧</span>
+        <div class="flex items-center gap-2">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表
+          </h3>
+          <span id="tableFilterStatus" class="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded hidden"></span>
+        </div>
+        <button id="resetFilterBtn" onclick="resetFilter()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded hidden transition">
+          フィルター解除（全表示）
+        </button>
       </div>
       <div class="overflow-x-auto max-h-80">
         <table class="w-full text-left text-xs text-slate-300">
@@ -117,10 +125,14 @@
 
   </main>
 
-  <!-- Script for Rendering Charts & Table -->
+  <!-- Script for Rendering Charts & Table with Cross-filtering -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = urlParams.get('id');
+
+    let currentSongData = null;
+    let viewsChartInstance = null;
+    let dailyBarChartInstance = null;
 
     function initSongPage() {
       if (!videoId) {
@@ -128,27 +140,41 @@
         return;
       }
 
-      // ローカルストレージ等から該当曲のデータを取得（なければサンプルデータ）
       const songs = JSON.parse(localStorage.getItem('vocaloid_tracker_songs_v3')) || [];
       const song = songs.find(s => s.video_id === videoId) || {
         video_id: videoId,
         title: 'サンプル楽曲タイトル',
         producer: 'サンプルP',
         views: 230035917,
-        history_dates: ['10月3日', '10月8日', '10月13日', '10月18日', '10月23日', '10月28日', '11月2日'],
+        history_dates: ['10/03', '10/08', '10/13', '10/18', '10/23', '10/28', '11/02'],
         history_views: [224000000, 225000000, 226000000, 227000000, 228000000, 229000000, 230035917],
-        daily_dates: ['10/04', '10/07', '10/10', '10/13', '10/16', '10/19', '10/22', '10/25', '10/28', '10/31'],
-        daily_increases: [17000, 11000, 12500, 11000, 10500, 16000, 12000, 14000, 10000, 12500],
+        daily_data: [
+          { date: '10/27', increase: 10000 },
+          { date: '10/28', increase: 16000 },
+          { date: '10/29', increase: 12000 },
+          { date: '10/30', increase: 14000 },
+          { date: '10/31', increase: 10000 },
+          { date: '11/01', increase: 12500 },
+          { date: '11/02', increase: 7771 }
+        ],
         logs: [
-          { updated_at: '2026/11/02 9:00:25', views: 230035917, increase: 7771, likes: 2251047 },
-          { updated_at: '2026/11/02 8:00:30', views: 230028146, increase: 9454, likes: 2251023 },
-          { updated_at: '2026/11/02 7:00:40', views: 230018692, increase: 7481, likes: 2250979 },
-          { updated_at: '2026/11/02 6:00:14', views: 230011211, increase: 6892, likes: 2250946 },
-          { updated_at: '2026/11/02 5:00:18', views: 230004319, increase: 7588, likes: 2250905 }
+          { updated_at: '2026/11/02 9:00:25', date: '11/02', views: 230035917, increase: 7771, likes: 2251047 },
+          { updated_at: '2026/11/02 8:00:30', date: '11/02', views: 230028146, increase: 9454, likes: 2251023 },
+          { updated_at: '2026/11/02 7:00:40', date: '11/02', views: 230018692, increase: 7481, likes: 2250979 },
+          { updated_at: '2026/11/02 6:00:14', date: '11/02', views: 230011211, increase: 6892, likes: 2250946 },
+          { updated_at: '2026/11/02 5:00:18', date: '11/02', views: 230004319, increase: 7588, likes: 2250905 },
+          { updated_at: '2026/11/01 23:00:00', date: '11/01', views: 229950000, increase: 5000, likes: 2250000 },
+          { updated_at: '2026/11/01 12:00:00', date: '11/01', views: 229920000, increase: 6000, likes: 2249000 },
+          { updated_at: '2026/10/31 12:00:00', date: '10/31', views: 229850000, increase: 10000, likes: 2248000 },
+          { updated_at: '2026/10/30 12:00:00', date: '10/30', views: 229750000, increase: 14000, likes: 2247000 },
+          { updated_at: '2026/10/29 12:00:00', date: '10/29', views: 229600000, increase: 12000, likes: 2246000 },
+          { updated_at: '2026/10/28 12:00:00', date: '10/28', views: 229450000, increase: 16000, likes: 2245000 },
+          { updated_at: '2026/10/27 12:00:00', date: '10/27', views: 229300000, increase: 10000, likes: 2244000 }
         ]
       };
 
-      // ヘッダー情報の反映
+      currentSongData = song;
+
       document.getElementById('songTitle').innerText = song.title || `動画ID: ${videoId}`;
       document.getElementById('songProducer').innerText = song.producer || '不明なP';
       document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
@@ -157,15 +183,17 @@
         document.getElementById('songStatusBadge').innerText = song.buzz_status;
       }
 
-      // グラフとテーブルの描画
-      renderViewsChart(song.history_dates || [], song.history_views || []);
-      renderDailyBarChart(song.daily_dates || [], song.daily_increases || []);
-      renderLogTable(song.logs || []);
+      // 初期描画（全データ、表は直近30個に制限）
+      renderViewsChart(song.history_dates, song.history_views);
+      renderDailyBarChart(song.daily_data);
+      renderLogTable(song.logs.slice(0, 30));
     }
 
     function renderViewsChart(labels, data) {
       const ctx = document.getElementById('viewsChart').getContext('2d');
-      new Chart(ctx, {
+      if (viewsChartInstance) viewsChartInstance.destroy();
+
+      viewsChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
@@ -190,9 +218,14 @@
       });
     }
 
-    function renderDailyBarChart(labels, data) {
+    function renderDailyBarChart(dailyData) {
       const ctx = document.getElementById('dailyBarChart').getContext('2d');
-      new Chart(ctx, {
+      if (dailyBarChartInstance) dailyBarChartInstance.destroy();
+
+      const labels = dailyData.map(d => d.date);
+      const data = dailyData.map(d => d.increase);
+
+      dailyBarChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
@@ -207,6 +240,13 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              const index = elements[0].index;
+              const selectedDate = labels[index];
+              filterByDate(selectedDate);
+            }
+          },
           scales: {
             x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
             y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
@@ -215,8 +255,42 @@
       });
     }
 
+    // クロスフィルタリング処理
+    function filterByDate(dateStr) {
+      if (!currentSongData || !currentSongData.logs) return;
+
+      const filteredLogs = currentSongData.logs.filter(log => log.date === dateStr);
+
+      renderLogTable(filteredLogs.slice(0, 30));
+
+      const statusBadge = document.getElementById('tableFilterStatus');
+      statusBadge.innerText = `表示中: ${dateStr}`;
+      statusBadge.classList.remove('hidden');
+      document.getElementById('resetFilterBtn').classList.remove('hidden');
+
+      if (filteredLogs.length > 0) {
+        const sortedLogs = [...filteredLogs].sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at));
+        const timeLabels = sortedLogs.map(l => l.updated_at.split(' ')[1] || l.updated_at);
+        const timeViews = sortedLogs.map(l => l.views);
+        renderViewsChart(timeLabels, timeViews);
+      }
+    }
+
+    function resetFilter() {
+      if (!currentSongData) return;
+      renderLogTable(currentSongData.logs.slice(0, 30));
+      renderViewsChart(currentSongData.history_dates, currentSongData.history_views);
+
+      document.getElementById('tableFilterStatus').classList.add('hidden');
+      document.getElementById('resetFilterBtn').classList.add('hidden');
+    }
+
     function renderLogTable(logs) {
       const tbody = document.getElementById('logTableBody');
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">該当するログデータはありません</td></tr>`;
+        return;
+      }
       tbody.innerHTML = logs.map(log => `
         <tr class="hover:bg-slate-800/40 transition">
           <td class="p-3 text-slate-400">${log.updated_at}</td>
