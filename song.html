@@ -27,7 +27,6 @@
   </script>
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
-    /* 🌟 アプリ風のグラデーションアイコン用クラス */
     .app-icon-badge {
       background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
@@ -40,7 +39,6 @@
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
     <div class="max-w-5xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <!-- 🌟 ご指定のアイコンデザインを反映したブランドロゴ -->
         <a href="index.html" class="flex items-center space-x-2.5 group">
           <div class="w-9 h-9 rounded-xl app-icon-badge flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition">
             <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
@@ -338,34 +336,35 @@
       document.getElementById('songThumbnail').src = thumbnailUrl;
       document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${videoId}`;
 
-      let allLogs = [];
+      let fetchedLogs = [];
       try {
         const response = await fetch('vocaloid_tracker_logs_30d.json');
         if (response.ok) {
-          allLogs = await response.json();
-          localStorage.setItem('vocaloid_tracker_logs_30d', JSON.stringify(allLogs));
+          fetchedLogs = await response.json();
         }
       } catch (e) {
-        console.log('JSONの非同期取得に失敗しました。localStorageを使用します。', e);
+        console.log('JSONの非同期取得に失敗しました。', e);
       }
 
-      if (!allLogs || allLogs.length === 0) {
-        allLogs = JSON.parse(localStorage.getItem('vocaloid_tracker_logs_30d')) || getSampleLogs(videoId);
+      // 🌟 15.1MB全体をlocalStorageに保存するのをやめ、メモリ圧迫を防ぐため
+      // 該当する videoId のデータだけをその場でフィルタリング・整形して抽出する
+      if (fetchedLogs && fetchedLogs.length > 0) {
+        allLogsForSong = fetchedLogs
+          .filter(log => log.video_id === videoId)
+          .map(log => ({
+            ...log,
+            updated_at: formatDateTime(log.updated_at)
+          }))
+          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
       }
 
-      allLogsForSong = allLogs
-        .filter(log => log.video_id === videoId)
-        .map(log => ({
-          ...log,
-          updated_at: formatDateTime(log.updated_at)
-        }))
-        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+      // 見つからない場合のフォールバック
+      if (!allLogsForSong || allLogsForSong.length === 0) {
+        allLogsForSong = getSampleLogs(videoId);
+      }
 
-      if (allLogsForSong.length === 0) {
-        document.getElementById('songTitle').innerText = `動画ID: ${videoId} のデータが見つかりません`;
-        document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
-        document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-        return;
+      if (allLogsForSong.length === 0 || (allLogsForSong.length === 1 && allLogsForSong[0].title.includes('サンプル'))) {
+        // サンプルまたはデータなしの場合の表示調整
       }
 
       const latest = allLogsForSong[0];
@@ -405,6 +404,7 @@
       renderDailyBarChart(dailyLabels, dailyValues, chronologicalLogs);
       
       renderLogTable(allLogsForSong);
+      lucide.createIcons();
     }
 
     function toggleMobileMenu() {
@@ -539,25 +539,21 @@
       if (isAdminMode) {
         const text = '🔓 管理者モード';
         const className = 'text-xs text-cyan-400 font-bold';
-        indicator.innerText = text;
-        indicator.className = className;
-        mobileIndicator.innerText = text;
-        mobileIndicator.className = className;
-        editBtn.classList.remove('hidden');
-        editProducerBtn.classList.remove('hidden');
-        vocalEditContainer.classList.remove('hidden');
-        creditEditContainer.classList.remove('hidden');
+        if (indicator) { indicator.innerText = text; indicator.className = className; }
+        if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
+        if (editBtn) editBtn.classList.remove('hidden');
+        if (editProducerBtn) editProducerBtn.classList.remove('hidden');
+        if (vocalEditContainer) vocalEditContainer.classList.remove('hidden');
+        if (creditEditContainer) creditEditContainer.classList.remove('hidden');
       } else {
         const text = '🔒 一般閲覧モード';
         const className = 'text-xs text-slate-400';
-        indicator.innerText = text;
-        indicator.className = className;
-        mobileIndicator.innerText = text;
-        mobileIndicator.className = className;
-        editBtn.classList.add('hidden');
-        editProducerBtn.classList.add('hidden');
-        vocalEditContainer.classList.add('hidden');
-        creditEditContainer.classList.add('hidden');
+        if (indicator) { indicator.innerText = text; indicator.className = className; }
+        if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
+        if (editBtn) editBtn.classList.add('hidden');
+        if (editProducerBtn) editProducerBtn.classList.add('hidden');
+        if (vocalEditContainer) vocalEditContainer.classList.add('hidden');
+        if (creditEditContainer) creditEditContainer.classList.add('hidden');
         cancelTitleEdit();
         cancelProducerEdit();
       }
@@ -573,7 +569,10 @@
 
     function cancelTitleEdit() {
       document.getElementById('songTitle').classList.remove('hidden');
-      if (isAdminMode) document.getElementById('editTitleBtn').classList.remove('hidden');
+      if (isAdminMode) {
+        const editBtn = document.getElementById('editTitleBtn');
+        if (editBtn) editBtn.classList.remove('hidden');
+      }
       document.getElementById('editTitleContainer').classList.add('hidden');
     }
 
