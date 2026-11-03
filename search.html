@@ -90,7 +90,10 @@
 
     <!-- 検索結果一覧グリッド -->
     <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <!-- JavaScriptで動的生成 -->
+      <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3 shadow-xl">
+        <i data-lucide="loader-2" class="w-8 h-8 text-cyan-400 animate-spin mx-auto"></i>
+        <p class="text-sm font-medium text-slate-300">ログデータを読み込み中...</p>
+      </div>
     </div>
   </main>
 
@@ -118,6 +121,7 @@
     const query = (urlParams.get('q') || '').trim();
     let uniqueSongsList = [];
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
+    const TOTAL_PARTS = 500; // 🌟 500分割されたログファイルに対応
 
     async function initSearchPage() {
       document.getElementById('searchInput').value = query;
@@ -126,13 +130,20 @@
 
       let rawLogs = [];
       try {
-        const response = await fetch('vocaloid_tracker_logs_30d.json');
-        if (response.ok) {
-          rawLogs = await response.json();
-        } else {
-          throw new Error();
+        // 🌟 500分割のJSONファイルをすべて並列で取得
+        const fetchPromises = [];
+        for (let i = 0; i < TOTAL_PARTS; i++) {
+          fetchPromises.push(
+            fetch(`logs/vocaloid_logs_part_${i}.json`)
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => [])
+          );
         }
+        
+        const results = await Promise.all(fetchPromises);
+        rawLogs = results.flat();
       } catch (err) {
+        console.error('ログデータの読み込みに失敗しました', err);
         rawLogs = [];
       }
 
@@ -239,11 +250,9 @@
           return (b.like_count || 0) - (a.like_count || 0);
         }
         if (sortVal === 'date_desc') {
-          // 投稿日時が新しい順 (大きいタイムスタンプが先)
           return b.parsed_published_at - a.parsed_published_at;
         }
         if (sortVal === 'date_asc') {
-          // 投稿日時が古い順 (小さいタイムスタンプが先)
           return a.parsed_published_at - b.parsed_published_at;
         }
         return 0;
