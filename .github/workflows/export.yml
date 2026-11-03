@@ -1,9 +1,15 @@
 name: BQ to GitHub Export
 
 on:
-  workflow_dispatch: # 手動でいつでも実行できるボタンを追加
+  workflow_dispatch:
   schedule:
-    - cron: '0 17 * * *' 
+    - cron: '17 3 * * *' # ※必要に応じて調整してください
+
+# 🌟 GitHub Pagesへのデプロイに必要な権限を追加
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   export:
@@ -39,3 +45,18 @@ jobs:
           git add logs/
           git status
           git diff-index --quiet HEAD || (git commit -m "Auto-export BQ logs to 500 parts [skip ci]" && git push)
+
+      # 🌟 【追加】GitHub Pages配信用にリポジトリのファイルをアップロード
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+  # 🌟 【追加】ビルドした成果物をGitHub Pagesに正式にデプロイするジョブ
+  deploy:
+    needs: export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
