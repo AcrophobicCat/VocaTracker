@@ -25,8 +25,11 @@
   </script>
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* スクロールバーのカスタマイズ（横スクロール用） */
+    .custom-scroll::-webkit-scrollbar { height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
   </style>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
@@ -64,10 +67,33 @@
     </div>
   </header>
 
+  <!-- 🌟【ヘッダー直下】YouTube Music Charts風・横スクロール・サムネ付きトレンドチャート -->
+  <section class="bg-slate-900/60 border-b border-slate-800/80 py-4 px-4 overflow-hidden">
+    <div class="max-w-6xl mx-auto space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-orange-500/10 text-orange-400 rounded-lg">
+            <i data-lucide="flame" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-sm font-extrabold text-white tracking-wide uppercase">トレンド急上昇・ハイライト</h2>
+          <span class="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full font-mono">LIVE</span>
+        </div>
+        <a href="ranking.html" class="text-xs text-slate-400 hover:text-cyan-400 transition flex items-center gap-1">
+          すべてのランキング <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+
+      <!-- 横スクロールコンテナ -->
+      <div id="trendCarouselContainer" class="flex gap-4 overflow-x-auto pb-3 pt-1 custom-scroll snap-x snap-mandatory">
+        <!-- JavaScriptで動的生成（スライドカード） -->
+      </div>
+    </div>
+  </section>
+
   <!-- Main Content Area -->
   <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 space-y-10">
 
-    <!-- Hero Section with Search Banner (search.html へ遷移) -->
+    <!-- Hero Section with Search Banner -->
     <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl space-y-6">
       <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
       
@@ -93,19 +119,6 @@
         </div>
       </form>
     </div>
-
-    <!-- 🌟 【最上部に移動】注目のピックアップ楽曲（YouTube Music Chart風デザイン ＆ 重複完全排除） -->
-    <section class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="flame" class="w-4 h-4 text-orange-400"></i> トレンド急上昇・注目ピックアップ
-        </h3>
-        <a href="ranking.html" class="text-xs text-cyan-400 hover:underline">ランキングをすべて見る →</a>
-      </div>
-      <div id="featuredContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- JavaScriptで動的生成 -->
-      </div>
-    </section>
 
     <!-- Portal Navigation Grid (各ページへのハブカード) -->
     <section class="space-y-4">
@@ -204,7 +217,7 @@
         const response = await fetch('vocaloid_tracker_logs_30d.json');
         if (response.ok) {
           const rawLogs = await response.json();
-          renderFeatured(rawLogs);
+          renderTrendCarousel(rawLogs);
         }
       } catch (err) {
         console.warn("JSON読み込み失敗:", err);
@@ -212,12 +225,14 @@
       lucide.createIcons();
     }
 
-    function renderFeatured(rawLogs) {
-      const container = document.getElementById('featuredContainer');
+    function renderTrendCarousel(rawLogs) {
+      const container = document.getElementById('trendCarouselContainer');
       if (!container) return;
 
-      // 🌟 楽曲データ重複（同一video_idの複数ログ）をユニーク化し、最新のステータスを抽出
+      // 1. 同一video_idのログを最新1件に集約（重複排除）
       const songMap = {};
+      const producerCountMap = {};
+
       rawLogs.forEach(log => {
         if (!log.video_id) return;
         const logTime = new Date(log.updated_at || 0).getTime();
@@ -228,31 +243,62 @@
 
       const uniqueSongs = Object.values(songMap);
 
-      // YouTube Music Chart風に「直近の毎時増加数（勢い）」が大きい上位3曲をピックアップ
-      const topTrending = uniqueSongs.sort((a, b) => (b.hourly_inclease || 0) - (a.hourly_inclease || 0)).slice(0, 3);
-
+      // カスタムタイトルの読み込み
       const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
       const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
 
-      container.innerHTML = topTrending.map((s, index) => {
+      // Pごとのランクイン件数を集計（ブラッシュアップ機能用）
+      uniqueSongs.forEach(s => {
+        const pName = customProducers[s.video_id] || s.producer || '不明';
+        producerCountMap[pName] = (producerCountMap[pName] || 0) + 1;
+      });
+
+      // 毎時増加数（勢い）順にソートし、上位10曲をカルーセル表示
+      const sortedTrending = uniqueSongs.sort((a, b) => (b.hourly_inclease || 0) - (a.hourly_inclease || 0)).slice(0, 10);
+
+      container.innerHTML = sortedTrending.map((s, index) => {
         const displayTitle = customTitles[s.video_id] || s.title || `動画ID: ${s.video_id}`;
-        const displayProducer = customProducers[s.video_id] || s.producer || '不明';
-        const rankColors = ['text-yellow-400 bg-yellow-500/10 border-yellow-500/30', 'text-slate-300 bg-slate-500/10 border-slate-500/30', 'text-amber-600 bg-amber-600/10 border-amber-600/30'];
+        const displayProducer = customProducers[s.video_id] || s.producer || 'ボカロP';
+        const thumbUrl = `https://img.youtube.com/vi/${s.video_id}/mqdefault.jpg`;
+        const rank = index + 1;
+
+        // 🌟 YouTube Music Chart風のハイライトバッジ生成（サンプルロジック / 拡張可能）
+        let badgeHtml = '';
+        const pSongCount = producerCountMap[displayProducer] || 1;
+
+        if (rank === 1) {
+          badgeHtml = `<span class="bg-gradient-to-r from-amber-500 to-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">🔥 トレンド1位 (急上昇)</span>`;
+        } else if (pSongCount >= 2) {
+          badgeHtml = `<span class="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-2 py-0.5 rounded">${escapeHTML(displayProducer)} ランクイン ${pSongCount}曲目</span>`;
+        } else if (rank <= 3) {
+          badgeHtml = `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded">TOP3をキープ中</span>`;
+        } else {
+          badgeHtml = `<span class="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0.5 rounded">TOP10ランクイン</span>`;
+        }
 
         return `
-          <a href="song.html?id=${s.video_id}" class="bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 block transition space-y-3 shadow-lg group relative overflow-hidden">
-            <div class="flex items-center justify-between">
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-black border ${rankColors[index] || 'text-slate-400 bg-slate-800'}">
-                #${index + 1} TREND
-              </span>
-              <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">
+          <a href="song.html?id=${s.video_id}" class="w-72 md:w-80 shrink-0 bg-slate-900 border border-slate-800 hover:border-cyan-500/60 rounded-2xl p-3.5 block transition space-y-3 shadow-lg snap-start group">
+            <!-- サムネイル + 順位バッジ -->
+            <div class="relative aspect-video rounded-xl overflow-hidden bg-slate-800 border border-slate-700/50">
+              <img src="${thumbUrl}" alt="${escapeHTML(displayTitle)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+              <div class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur text-white text-xs font-black px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1 shadow">
+                <span class="text-cyan-400 font-mono">#${rank}</span>
+              </div>
+              <div class="absolute bottom-2 right-2 bg-emerald-600/90 backdrop-blur text-white text-[11px] font-bold px-2 py-0.5 rounded shadow">
                 +${(s.hourly_inclease || 0).toLocaleString()} /h
-              </span>
+              </div>
             </div>
-            <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-2 leading-snug">${escapeHTML(displayTitle)}</h4>
-            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
-              <span>P名: ${escapeHTML(displayProducer)}</span>
-              <span class="font-semibold text-slate-200">${(s.views || 0).toLocaleString()} 回再生</span>
+
+            <!-- 曲情報 -->
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-1.5 overflow-hidden">
+                ${badgeHtml}
+              </div>
+              <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-1 leading-snug">${escapeHTML(displayTitle)}</h4>
+              <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+                <span class="truncate max-w-[140px]">P名: ${escapeHTML(displayProducer)}</span>
+                <span class="font-semibold text-slate-300 shrink-0">${(s.views || 0).toLocaleString()} 回</span>
+              </div>
             </div>
           </a>
         `;
