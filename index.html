@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VocaTracker</title>
+  <title>VocaTracker - ボカロ楽曲アナリティクス</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -44,7 +44,7 @@
         </div>
       </a>
 
-      <!-- Header Navigation -->
+      <!-- Header Links -->
       <nav class="hidden md:flex items-center space-x-1 text-sm font-medium">
         <a href="index.html" class="px-3 py-1.5 rounded-lg text-cyan-400 bg-slate-800">ホーム</a>
         <a href="ranking.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition">ランキング</a>
@@ -67,40 +67,49 @@
   <!-- Main Content Area -->
   <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 space-y-10">
 
-    <!-- Hero Section with Search Banner -->
-    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl space-y-6">
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
       <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      
-      <div class="max-w-3xl space-y-3">
+      <div class="max-w-3xl space-y-4">
         <div class="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold">
           <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
           <span>VocaTracker Static Site Architecture</span>
         </div>
         <h2 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">ボカロシーンの動向を掴むアナリティクスハブ</h2>
         <p class="text-sm md:text-base text-slate-300 leading-relaxed">
-          YouTube Data APIとBigQueryによる高精度トラッキングデータを活用。お好みの楽曲やボカロPを検索してみましょう。
+          YouTube Data APIとBigQueryによる高精度トラッキングデータを、セルフホスト型静的ページで高速表示。気になる楽曲の詳細データや推移グラフへ直接アクセスできます。
         </p>
-      </div>
 
-      <!-- Search Banner Form (search.html へ遷移) -->
-      <form action="search.html" method="GET" class="max-w-xl">
-        <div class="relative shadow-inner rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-700 focus-within:border-cyan-500 transition">
-          <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input type="text" name="q" placeholder="曲名、ボカロP名、ボーカル名、動画IDで検索..." required class="w-full bg-transparent pl-12 pr-28 py-3.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none">
-          <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-md">
-            検索する
-          </button>
+        <!-- Search Bar in Hero -->
+        <div class="pt-2">
+          <div class="relative max-w-xl">
+            <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="曲名やボカロP名で楽曲を検索..." class="w-full bg-slate-900/90 border border-slate-700 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 shadow-inner transition">
+          </div>
         </div>
-      </form>
+      </div>
     </div>
 
-    <!-- Portal Navigation Grid (各ページへのハブカード) -->
+    <!-- Search Results Section (Initially Hidden) -->
+    <section id="searchResultSection" class="hidden space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
+          <i data-lucide="search" class="w-5 h-5"></i> 検索結果
+        </h3>
+        <button onclick="clearSearch()" class="text-xs text-slate-400 hover:text-white">検索を閉じる</button>
+      </div>
+      <div id="searchResultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Portal Navigation Grid -->
     <section class="space-y-4">
       <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
         <i data-lucide="compass" class="w-4 h-4 text-cyan-400"></i> 各種アナリティクス・専用ページ
       </h3>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        <!-- バズレーダー -->
         <a href="buzz.html" class="bg-slate-900/80 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-6 transition group block shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div class="p-3 bg-orange-500/10 text-orange-400 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition">
@@ -112,6 +121,7 @@
           <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">直近の急上昇トレンドをリアルタイムで検知した注目楽曲のまとめ。</p>
         </a>
 
+        <!-- 新曲レーダー -->
         <a href="newrelease.html" class="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 transition group block shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition">
@@ -123,6 +133,7 @@
           <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">投稿から14日以内のフレッシュなニューリリース作品をピックアップ。</p>
         </a>
 
+        <!-- 大台予測 -->
         <a href="forecast.html" class="bg-slate-900/80 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-6 transition group block shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl group-hover:bg-purple-500 group-hover:text-white transition">
@@ -131,9 +142,10 @@
             <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-2.5 py-1 rounded-full">FORECAST</span>
           </div>
           <h4 class="font-bold text-lg text-white group-hover:text-purple-400 transition">大台達成予測</h4>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">ミリオンや神話入り到達までのカウントダウン推計。</p>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">ミリオンや神話入り（1000万回）到達までのカウントダウン推計。</p>
         </a>
 
+        <!-- 大台突破アーカイブ -->
         <a href="archive.html" class="bg-slate-900/80 border border-slate-800 hover:border-yellow-500/50 rounded-2xl p-6 transition group block shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div class="p-3 bg-yellow-500/10 text-yellow-400 rounded-xl group-hover:bg-yellow-500 group-hover:text-white transition">
@@ -145,6 +157,7 @@
           <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">過去に大台を達成した歴史的な記録・マイルストーンの数々。</p>
         </a>
 
+        <!-- ランキング -->
         <a href="ranking.html" class="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-6 transition group block shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition">
@@ -155,6 +168,7 @@
           <h4 class="font-bold text-lg text-white group-hover:text-blue-400 transition">再生数ランキング</h4>
           <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">累積再生数に基づく総合ランキング上位100曲の一覧。</p>
         </a>
+
       </div>
     </section>
 
@@ -162,7 +176,7 @@
     <section class="space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="flame" class="w-4 h-4 text-orange-400"></i> トレンド急上昇ピックアップ
+          <i data-lucide="flame" class="w-4 h-4 text-orange-400"></i> 注目のピックアップ楽曲
         </h3>
         <a href="ranking.html" class="text-xs text-cyan-400 hover:underline">ランキングをすべて見る →</a>
       </div>
@@ -182,28 +196,48 @@
     </div>
   </footer>
 
-  <!-- MODAL -->
+  <!-- MODAL: PRIVACY POLICY -->
   <div id="privacyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 space-y-4 text-sm text-slate-300 relative">
       <button onclick="closeModal('privacyModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
         <i data-lucide="x" class="w-6 h-6"></i>
       </button>
       <h3 class="text-lg font-bold text-white">プライバシーポリシー</h3>
-      <p class="text-xs text-slate-400">当サイトは YouTube Data API を使用して公開動画の統計データを取得・可視化しています。</p>
+      <p class="text-xs text-slate-400">当サイト (VocaTracker) は、YouTube Data API を使用して公開動画の統計データを取得・可視化しています。ユーザーの個人情報を収集することはありません。</p>
+      <h4 class="font-bold text-white text-xs">YouTube API Services</h4>
+      <p class="text-xs">当サービスは YouTube API Services を利用しています。ユーザーは当サイトを利用することで、<a href="https://www.youtube.com/t/terms" class="text-cyan-400 underline" target="_blank">YouTube 利用規約</a> および <a href="http://www.google.com/policies/privacy" class="text-cyan-400 underline" target="_blank">Google プライバシーポリシー</a> に同意したものとみなされます。</p>
     </div>
   </div>
 
+  <!-- Script for Portal Hub & Search & JSON Fetch -->
   <script>
+    let allSongs = [];
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
     async function initPortal() {
       try {
         const response = await fetch('vocaloid_tracker_logs_30d.json');
         if (response.ok) {
-          const allSongs = await response.json();
-          renderFeatured(allSongs);
+          allSongs = await response.json();
+        } else {
+          throw new Error('JSON not found');
         }
       } catch (err) {
-        console.warn("JSON読み込み失敗:", err);
+        // フォールバック（サンプルデータ）
+        allSongs = [
+          { video_id: 'NhuTf1-yE64', title: 'メズマライザー / 初音ミク・重音テト', producer: 'サツキ', views: 9400000, hourly_inclease: 180000, updated_at: '2026/11/02 09:00:00' },
+          { video_id: 'a1234567890', title: '新世代のレボリューション / 初音ミク', producer: 'MikuP', views: 820000, hourly_inclease: 85000, updated_at: '2026/11/02 09:00:00' },
+          { video_id: 'b0987654321', title: 'サイバー・ディストピア', producer: 'ElectroProducer', views: 1050000, hourly_inclease: 120000, updated_at: '2026/11/02 09:00:00' }
+        ];
       }
+
+      renderFeatured(allSongs);
       lucide.createIcons();
     }
 
@@ -211,5 +245,61 @@
       const container = document.getElementById('featuredContainer');
       if (!container) return;
 
-      // 直近の増加分（hourly_inclease）が大きい上位3曲をトレンドとしてピックアップ
-      const trending = [...songs].sort((a, b) => (b.hourly_inclease
+      const topSongs = [...songs].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
+
+      container.innerHTML = topSongs.map(s => `
+        <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 block transition space-y-2 shadow-md group">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="text-cyan-400 font-bold">ID: ${escapeHTML(s.video_id)}</span>
+            <span>${(s.views || 0).toLocaleString()}回再生</span>
+          </div>
+          <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-1">${escapeHTML(s.title)}</h4>
+          <p class="text-xs text-slate-400">増加量: +${(s.hourly_inclease || 0).toLocaleString()}</p>
+        </a>
+      `).join('');
+    }
+
+    // 検索機能
+    function handleSearch(query) {
+      const q = query.trim().toLowerCase();
+      const resultsSection = document.getElementById('searchResultSection');
+      const container = document.getElementById('searchResultsContainer');
+
+      if (!q) {
+        resultsSection.classList.add('hidden');
+        return;
+      }
+
+      const filtered = allSongs.filter(s => 
+        (s.title || '').toLowerCase().includes(q) ||
+        (s.video_id || '').toLowerCase().includes(q)
+      );
+
+      resultsSection.classList.remove('hidden');
+      container.innerHTML = filtered.length > 0 ? filtered.map(s => `
+        <a href="song.html?id=${s.video_id}" class="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-4 block transition space-y-2 shadow-md">
+          <div class="text-xs text-cyan-400 font-bold">${escapeHTML(s.video_id)}</div>
+          <h4 class="font-bold text-white text-sm line-clamp-1">${escapeHTML(s.title)}</h4>
+          <div class="flex justify-between text-xs text-slate-400">
+            <span>${(s.views || 0).toLocaleString()}回再生</span>
+            <span class="text-cyan-400">詳細を見る →</span>
+          </div>
+        </a>
+      `).join('') : '<p class="text-xs text-slate-400 col-span-full">該当する楽曲が見つかりませんでした。</p>';
+
+      lucide.createIcons();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchResultSection').classList.add('hidden');
+    }
+
+    function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
+    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
+
+    window.onload = initPortal;
+  </script>
+</body>
+</html>
