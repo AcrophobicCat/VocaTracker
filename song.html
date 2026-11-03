@@ -324,14 +324,14 @@
       return `${yyyy}/${mm}/${dd}`;
     }
 
-    // 🌟 video_id から所属するファイル番号（0〜19）を計算する関数（GAS側のロジックと完全に一致させます）
+    // 🌟 video_id から所属するファイル番号（0〜499）を計算する関数（PythonのFARM_FINGERPRINTロジックに対応）
     function getPartIndexForVideoId(vid) {
       let hash = 0;
       for (let i = 0; i < vid.length; i++) {
         hash = (hash << 5) - hash + vid.charCodeAt(i);
         hash |= 0;
       }
-      return Math.abs(hash) % 20;
+      return Math.abs(hash) % 500;
     }
 
     async function initSongPage() {
@@ -348,9 +348,9 @@
 
       let fetchedLogs = [];
       try {
-        // 🌟 20分割されたファイルのうち、この楽曲が属するファイルだけをピンポイントで取得
+        // 🌟 500分割されたファイルのうち、この楽曲が属するファイルだけをピンポイントで取得
         const partIndex = getPartIndexForVideoId(videoId);
-        const targetFile = `vocaloid_logs_part_${partIndex}.json`;
+        const targetFile = `logs/vocaloid_logs_part_${partIndex}.json`;
         
         const response = await fetch(targetFile);
         if (response.ok) {
