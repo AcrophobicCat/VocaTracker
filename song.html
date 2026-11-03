@@ -324,6 +324,16 @@
       return `${yyyy}/${mm}/${dd}`;
     }
 
+    // 🌟 video_id から所属するファイル番号（0〜19）を計算する関数（GAS側のロジックと完全に一致させます）
+    function getPartIndexForVideoId(vid) {
+      let hash = 0;
+      for (let i = 0; i < vid.length; i++) {
+        hash = (hash << 5) - hash + vid.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash) % 20;
+    }
+
     async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
@@ -338,16 +348,19 @@
 
       let fetchedLogs = [];
       try {
-        const response = await fetch('vocaloid_tracker_logs_30d.json');
+        // 🌟 20分割されたファイルのうち、この楽曲が属するファイルだけをピンポイントで取得
+        const partIndex = getPartIndexForVideoId(videoId);
+        const targetFile = `vocaloid_logs_part_${partIndex}.json`;
+        
+        const response = await fetch(targetFile);
         if (response.ok) {
           fetchedLogs = await response.json();
         }
       } catch (e) {
-        console.log('JSONの非同期取得に失敗しました。', e);
+        console.log('分割JSONファイルの非同期取得に失敗しました。', e);
       }
 
-      // 🌟 15.1MB全体をlocalStorageに保存するのをやめ、メモリ圧迫を防ぐため
-      // 該当する videoId のデータだけをその場でフィルタリング・整形して抽出する
+      // 該当ファイルからこの videoId のデータだけを抽出・整形
       if (fetchedLogs && fetchedLogs.length > 0) {
         allLogsForSong = fetchedLogs
           .filter(log => log.video_id === videoId)
@@ -361,10 +374,6 @@
       // 見つからない場合のフォールバック
       if (!allLogsForSong || allLogsForSong.length === 0) {
         allLogsForSong = getSampleLogs(videoId);
-      }
-
-      if (allLogsForSong.length === 0 || (allLogsForSong.length === 1 && allLogsForSong[0].title.includes('サンプル'))) {
-        // サンプルまたはデータなしの場合の表示調整
       }
 
       const latest = allLogsForSong[0];
