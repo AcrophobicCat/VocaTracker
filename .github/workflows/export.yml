@@ -3,7 +3,7 @@ name: BQ to GitHub Export
 on:
   workflow_dispatch: # 手動でいつでも実行できるボタンを追加
   schedule:
-    - cron: '0 3 * * *' # 毎日深夜3時（JST）に自動実行する場合
+    - cron: '0 17 * * *' 
 
 jobs:
   export:
