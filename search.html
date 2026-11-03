@@ -29,7 +29,7 @@
       <form action="search.html" method="GET" class="flex-1 max-w-xl">
         <div class="relative">
           <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input type="text" id="searchInput" name="q" placeholder="曲名、ボカロP名、動画ID..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-16 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+          <input type="text" id="searchInput" name="q" placeholder="曲名、ボカロP名、タグ、動画ID..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-16 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
           <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-medium px-3 py-1 rounded-lg">検索</button>
         </div>
       </form>
@@ -121,7 +121,7 @@
     const query = (urlParams.get('q') || '').trim();
     let uniqueSongsList = [];
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
-    const TOTAL_PARTS = 500; // 🌟 500分割されたログファイルに対応
+    const TOTAL_PARTS = 500; // 最大500分割対応（存在するファイルのみ安全に自動取得）
 
     async function initSearchPage() {
       document.getElementById('searchInput').value = query;
@@ -130,7 +130,7 @@
 
       let rawLogs = [];
       try {
-        // 🌟 500分割のJSONファイルをすべて並列で取得
+        // 🌟 存在するJSONファイルだけを安全に並列取得して合算する仕組み
         const fetchPromises = [];
         for (let i = 0; i < TOTAL_PARTS; i++) {
           fetchPromises.push(
@@ -147,17 +147,15 @@
         rawLogs = [];
       }
 
-      // 🌟 動画IDごとにユニーク化し、有効な published_at を確実に抽出・パースする
+      // 動画IDごとにユニーク化
       const songMap = {};
       rawLogs.forEach(log => {
         if (!log.video_id) return;
-        
         const logTime = new Date(log.updated_at || 0).getTime();
 
         if (!songMap[log.video_id]) {
           songMap[log.video_id] = { ...log, latest_log_time: logTime };
         } else {
-          // より新しいログであればデータを更新（ただし published_at が空でなければ保持）
           if (logTime > songMap[log.video_id].latest_log_time) {
             const currentPub = songMap[log.video_id].published_at;
             songMap[log.video_id] = { ...log, latest_log_time: logTime };
@@ -169,7 +167,6 @@
       });
 
       uniqueSongsList = Object.values(songMap).map(s => {
-        // published_at が存在すればその時間を数値化、無ければ updated_at やフォールバックを使用
         let pubTime = 0;
         if (s.published_at) {
           pubTime = new Date(s.published_at).getTime();
@@ -177,7 +174,6 @@
         if (isNaN(pubTime) || pubTime === 0) {
           pubTime = new Date(s.updated_at || 0).getTime();
         }
-
         return {
           ...s,
           parsed_published_at: pubTime
@@ -207,6 +203,18 @@
       if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
     }
 
+    // 🌟 ひらがなをカタカナに変換し、特殊文字やスペースの揺れを正規化するヘルパー
+    function normalizeSearchText(str) {
+      if (!str) return '';
+      return str
+        .toLowerCase()
+        // ひらがなをカタカナに変換
+        .replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60))
+        // 全角英数・記号を半角に、全角スペースを半角スペースに統一
+        .replace(/[Ａ-Ｚａ-ｚ０-９！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        .replace(/ /g, ' ');
+    }
+
     function calculateTrendScore(song) {
       const views = song.views || 0;
       const increase = song.hourly_inclease || 0;
@@ -221,18 +229,29 @@
     }
 
     function applySortAndFilter() {
-      const q = query.toLowerCase();
+      // 🌟 スペース区切りの複数キーワードに対応（例: 「初音ミク 2026」など）
+      const rawTokens = query.split(/\s+/).filter(t => t.length > 0);
+      const searchTokens = rawTokens.map(token => normalizeSearchText(token));
       
       let filtered = uniqueSongsList.filter(s => {
         const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
         const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
-        
-        const title = (customTitles[s.video_id] || s.title || '').toLowerCase();
-        const producer = (customProducers[s.video_id] || s.producer || '').toLowerCase();
-        const videoId = (s.video_id || '').toLowerCase();
+        const allTagsObj = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
+        const songTags = allTagsObj[s.video_id] || { vocal: [], credit: [], free: [] };
 
-        if (!q) return true;
-        return title.includes(q) || producer.includes(q) || videoId.includes(q);
+        // タイトル、P名、動画ID、各種タグ（ボーカル・クレジット・フリー）をすべて結合して検索対象にする
+        const title = customTitles[s.video_id] || s.title || '';
+        const producer = customProducers[s.video_id] || s.producer || '';
+        const videoId = s.video_id || '';
+        const tagsJoined = [...songTags.vocal, ...songTags.credit, ...songTags.free].join(' ');
+
+        // 検索対象の文字列全体を正規化（ひらがな→カタカナ化、小文字化など）
+        const targetText = normalizeSearchText(`${title} ${producer} ${videoId} ${tagsJoined}`);
+
+        if (searchTokens.length === 0) return true;
+
+        // すべてのキーワード（トークン）がターゲットテキストに含まれているか（AND検索）
+        return searchTokens.every(token => targetText.includes(token));
       });
 
       const sortVal = document.getElementById('sortSelect').value;
@@ -244,7 +263,7 @@
           return (b.hourly_inclease || 0) - (a.hourly_inclease || 0);
         }
         if (sortVal === 'views_desc') {
-          return (b.views || 0) - (a.views || 0);
+          return (b.views || 0) - (b.views || 0) ? (b.views || 0) - (a.views || 0) : 0;
         }
         if (sortVal === 'likes_desc') {
           return (b.like_count || 0) - (a.like_count || 0);
