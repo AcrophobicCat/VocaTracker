@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランキング - VocaTracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#0f172a', cardbg: '#1e293b' } } } }
+  </script>
+  <style> body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; } </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <a href="index.html" class="flex items-center space-x-2 shrink-0">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+            <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
+          </div>
+          <span class="font-bold text-lg bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent hidden sm:inline">VocaTracker</span>
+        </a>
+        <nav class="hidden sm:flex items-center gap-2 text-xs">
+          <a href="index.html" class="text-slate-400 hover:text-white px-3 py-1.5 rounded-lg transition">ホーム</a>
+          <a href="search.html" class="text-slate-400 hover:text-white px-3 py-1.5 rounded-lg transition">楽曲検索</a>
+          <a href="ranking.html" class="bg-slate-800 text-cyan-400 font-medium px-3 py-1.5 rounded-lg border border-slate-700/60">ランキング</a>
+        </nav>
+      </div>
+
+      <!-- 検索へジャンプする簡易フォーム -->
+      <form action="search.html" method="GET" class="flex-1 max-w-xs hidden md:block">
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" name="q" placeholder="曲名やP名で検索..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+    
+    <!-- ランキングタイトル ＆ タブ切り替え -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 class="text-lg font-extrabold text-white flex items-center gap-2">
+            <i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i> ボカロ楽曲ランキング
+          </h1>
+          <p id="updateTimeDisplay" class="text-xs text-slate-400 mt-0.5">最終更新: 読み込み中...</p>
+        </div>
+
+        <!-- タブボタン -->
+        <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 overflow-x-auto text-xs">
+          <button onclick="switchCategory('yesterday')" id="tab-yesterday" class="px-3 py-1.5 rounded-lg font-medium transition bg-cyan-600 text-white shadow">昨日増加</button>
+          <button onclick="switchCategory('7d')" id="tab-7d" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">週間 (7日)</button>
+          <button onclick="switchCategory('30d')" id="tab-30d" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">月間 (30日)</button>
+          <button onclick="switchCategory('total')" id="tab-total" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">累計再生</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ランキング一覧テーブル -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-800/60 text-slate-400 uppercase border-b border-slate-800">
+            <tr>
+              <th class="p-3.5 w-16 text-center">順位</th>
+              <th class="p-3.5 w-16 text-center">前日比</th>
+              <th class="p-3.5">楽曲名 / 動画ID</th>
+              <th id="metricHeader" class="p-3.5 text-right">昨日の増加数</th>
+              <th class="p-3.5 text-right">累計再生数</th>
+            </tr>
+          </thead>
+          <tbody id="rankingTableBody" class="divide-y divide-slate-800/80">
+            <tr>
+              <td colspan="5" class="p-8 text-center text-slate-500">
+                <i data-lucide="loader-2" class="w-6 h-6 text-cyan-400 animate-spin mx-auto mb-2"></i>
+                ランキングデータを読み込み中...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let rankingData = [];
+    let currentCategory = 'yesterday'; // 'yesterday' | '7d' | '30d' | 'total'
+
+    async function initRankingPage() {
+      try {
+        // 🌟 BigQueryから出力されたサマリーJSONを取得 (例: rankings.json)
+        const response = await fetch('rankings.json');
+        if (response.ok) {
+          rankingData = await response.json();
+        } else {
+          throw new Error('ランキングデータが見つかりません');
+        }
+      } catch (err) {
+        console.error(err);
+        rankingData = [];
+      }
+
+      renderRanking();
+    }
+
+    function switchCategory(category) {
+      currentCategory = category;
+      
+      // タブの見た目アクティブ切り替え
+      ['yesterday', '7d', '30d', 'total'].forEach(cat => {
+        const btn = document.getElementById(`tab-${cat}`);
+        if (cat === category) {
+          btn.className = "px-3 py-1.5 rounded-lg font-medium transition bg-cyan-600 text-white shadow";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white";
+        }
+      });
+
+      renderRanking();
+    }
+
+    function renderRanking() {
+      const tbody = document.getElementById('rankingTableBody');
+      const metricHeader = document.getElementById('metricHeader');
+
+      if (!rankingData || rankingData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">ランキングデータがありません。データのエクスポートをお待ちください。</td></tr>`;
+        return;
+      }
+
+      // カテゴリに応じたソートキーと順位キーの割り当て
+      let rankKey, changeKey, valueKey, headerText;
+      if (currentCategory === 'yesterday') {
+        rankKey = 'rank_yesterday';
+        changeKey = 'rank_change_yesterday';
+        valueKey = 'increase_yesterday';
+        headerText = '昨日の増加数';
+      } else if (currentCategory === '7d') {
+        rankKey = 'rank_7d';
+        changeKey = 'rank_change_7d';
+        valueKey = 'increase_7d';
+        headerText = '週間増加数 (7日)';
+      } else if (currentCategory === '30d') {
+        rankKey = 'rank_30d';
+        changeKey = 'rank_change_30d';
+        valueKey = 'increase_30d';
+        headerText = '月間増加数 (30日)';
+      } else {
+        rankKey = 'rank_total';
+        changeKey = 'rank_change_total';
+        valueKey = 'total_views';
+        headerText = '累計再生数';
+      }
+
+      metricHeader.innerText = headerText;
+
+      // 該当の順位でソート（100位以内）
+      const sorted = [...rankingData]
+        .filter(item => item[rankKey] && item[rankKey] <= 100)
+        .sort((a, b) => a[rankKey] - b[rankKey]);
+
+      if (sorted.length > 0 && sorted[0].updated_at) {
+        document.getElementById('updateTimeDisplay').innerText = `最終更新: ${formatDateTime(sorted[0].updated_at)}`;
+      }
+
+      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+
+      tbody.innerHTML = sorted.map(item => {
+        const rank = item[rankKey];
+        const change = item[changeKey] || '=';
+        const displayTitle = customTitles[item.video_id] || item.title || `動画ID: ${item.video_id}`;
+        const val = item[valueKey] || 0;
+        const totalViews = item.total_views || 0;
+
+        // 順位バッジの色分け
+        let rankBadgeClass = 'text-slate-300 font-bold';
+        if (rank === 1) rankBadgeClass = 'text-amber-400 font-black text-sm bg-amber-400/10 px-2 py-0.5 rounded';
+        else if (rank === 2) rankBadgeClass = 'text-slate-200 font-black text-sm bg-slate-300/10 px-2 py-0.5 rounded';
+        else if (rank === 3) rankBadgeClass = 'text-amber-600 font-black text-sm bg-amber-600/10 px-2 py-0.5 rounded';
+
+        // 順位変動バッジの色分け
+        let changeBadge = `<span class="text-slate-500">=</span>`;
+        if (change === 'NEW') {
+          changeBadge = `<span class="text-purple-400 font-bold text-[10px] bg-purple-500/10 px-1.5 py-0.5 rounded">NEW</span>`;
+        } else if (change.startsWith('+')) {
+          changeBadge = `<span class="text-emerald-400 font-medium text-[10px]">${change}</span>`;
+        } else if (change !== '=') {
+          changeBadge = `<span class="text-rose-400 font-medium text-[10px]">${change}</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3.5 text-center"><span class="${rankBadgeClass}">${rank}</span></td>
+            <td class="p-3.5 text-center">${changeBadge}</td>
+            <td class="p-3.5">
+              <a href="song.html?id=${item.video_id}" class="font-bold text-white hover:text-cyan-400 transition line-clamp-1 block">
+                ${escapeHTML(displayTitle)}
+              </a>
+              <span class="text-[10px] text-slate-500 font-mono">ID: ${item.video_id}</span>
+            </td>
+            <td class="p-3.5 text-right font-medium text-cyan-400">+${val.toLocaleString()}</td>
+            <td class="p-3.5 text-right text-slate-300">${totalViews.toLocaleString()}</td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function formatDateTime(rawDate) {
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return rawDate;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    window.onload = initRankingPage;
+  </script>
+</body>
+</html>
