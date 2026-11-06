@@ -324,16 +324,6 @@
       return `${yyyy}/${mm}/${dd}`;
     }
 
-    // 🌟 video_id から所属するファイル番号（0〜499）を計算する関数（PythonのFARM_FINGERPRINTロジックに対応）
-    function getPartIndexForVideoId(vid) {
-      let hash = 0;
-      for (let i = 0; i < vid.length; i++) {
-        hash = (hash << 5) - hash + vid.charCodeAt(i);
-        hash |= 0;
-      }
-      return Math.abs(hash) % 500;
-    }
-
     async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
@@ -348,22 +338,27 @@
 
       let fetchedLogs = [];
       try {
-        // 🌟 500分割されたファイルのうち、この楽曲が属するファイルだけをピンポイントで取得
-        const partIndex = getPartIndexForVideoId(videoId);
-        const targetFile = `logs/vocaloid_logs_part_${partIndex}.json`;
-        
-        const response = await fetch(targetFile);
-        if (response.ok) {
-          fetchedLogs = await response.json();
+        // 🌟 全500ファイルを並列スキャンして、対象の videoId のデータを安全に取得
+        const TOTAL_PARTS = 500;
+        const fetchPromises = [];
+        for (let i = 0; i < TOTAL_PARTS; i++) {
+          fetchPromises.push(
+            fetch(`logs/vocaloid_logs_part_${i}.json`)
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => [])
+          );
         }
+        const results = await Promise.all(fetchPromises);
+        const allRows = results.flat();
+
+        fetchedLogs = allRows.filter(log => log.video_id === videoId);
       } catch (e) {
-        console.log('分割JSONファイルの非同期取得に失敗しました。', e);
+        console.log('JSONファイルの取得に失敗しました。', e);
       }
 
-      // 該当ファイルからこの videoId のデータだけを抽出・整形
+      // 該当データが見つかった場合の整形
       if (fetchedLogs && fetchedLogs.length > 0) {
         allLogsForSong = fetchedLogs
-          .filter(log => log.video_id === videoId)
           .map(log => ({
             ...log,
             updated_at: formatDateTime(log.updated_at)
