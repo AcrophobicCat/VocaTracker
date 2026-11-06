@@ -121,7 +121,7 @@
     const query = (urlParams.get('q') || '').trim();
     let uniqueSongsList = [];
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
-    const TOTAL_PARTS = 500; // 最大500分割対応（存在するファイルのみ安全に自動取得）
+    const TOTAL_PARTS = 500;
 
     async function initSearchPage() {
       document.getElementById('searchInput').value = query;
@@ -130,7 +130,6 @@
 
       let rawLogs = [];
       try {
-        // 🌟 存在するJSONファイルだけを安全に並列取得して合算する仕組み
         const fetchPromises = [];
         for (let i = 0; i < TOTAL_PARTS; i++) {
           fetchPromises.push(
@@ -203,14 +202,11 @@
       if (mobileIndicator) { mobileIndicator.innerText = text; mobileIndicator.className = className; }
     }
 
-    // 🌟 ひらがなをカタカナに変換し、特殊文字やスペースの揺れを正規化するヘルパー
     function normalizeSearchText(str) {
       if (!str) return '';
       return str
         .toLowerCase()
-        // ひらがなをカタカナに変換
         .replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60))
-        // 全角英数・記号を半角に、全角スペースを半角スペースに統一
         .replace(/[Ａ-Ｚａ-ｚ０-９！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
         .replace(/ /g, ' ');
     }
@@ -229,7 +225,6 @@
     }
 
     function applySortAndFilter() {
-      // 🌟 スペース区切りの複数キーワードに対応（例: 「初音ミク 2026」など）
       const rawTokens = query.split(/\s+/).filter(t => t.length > 0);
       const searchTokens = rawTokens.map(token => normalizeSearchText(token));
       
@@ -239,18 +234,15 @@
         const allTagsObj = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
         const songTags = allTagsObj[s.video_id] || { vocal: [], credit: [], free: [] };
 
-        // タイトル、P名、動画ID、各種タグ（ボーカル・クレジット・フリー）をすべて結合して検索対象にする
         const title = customTitles[s.video_id] || s.title || '';
         const producer = customProducers[s.video_id] || s.producer || '';
         const videoId = s.video_id || '';
         const tagsJoined = [...songTags.vocal, ...songTags.credit, ...songTags.free].join(' ');
 
-        // 検索対象の文字列全体を正規化（ひらがな→カタカナ化、小文字化など）
         const targetText = normalizeSearchText(`${title} ${producer} ${videoId} ${tagsJoined}`);
 
         if (searchTokens.length === 0) return true;
 
-        // すべてのキーワード（トークン）がターゲットテキストに含まれているか（AND検索）
         return searchTokens.every(token => targetText.includes(token));
       });
 
@@ -263,7 +255,7 @@
           return (b.hourly_inclease || 0) - (a.hourly_inclease || 0);
         }
         if (sortVal === 'views_desc') {
-          return (b.views || 0) - (b.views || 0) ? (b.views || 0) - (a.views || 0) : 0;
+          return (b.views || 0) - (a.views || 0);
         }
         if (sortVal === 'likes_desc') {
           return (b.like_count || 0) - (a.like_count || 0);
