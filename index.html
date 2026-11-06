@@ -213,17 +213,27 @@
     }
 
     async function initPortal() {
-      try {
-        const response = await fetch('vocaloid_tracker_logs_30d.json');
-        if (response.ok) {
-          const rawLogs = await response.json();
-          renderTrendCarousel(rawLogs);
-        }
-      } catch (err) {
-        console.warn("JSON読み込み失敗:", err);
+    const TOTAL_PARTS = 500;
+    let rawLogs = [];
+    try {
+      const fetchPromises = [];
+      for (let i = 0; i < TOTAL_PARTS; i++) {
+        fetchPromises.push(
+          fetch(`logs/vocaloid_logs_part_${i}.json`)
+            .then(res => res.ok ? res.json() : [])
+            .catch(() => [])
+        );
       }
-      lucide.createIcons();
+      const results = await Promise.all(fetchPromises);
+      rawLogs = results.flat();
+      if (rawLogs.length > 0) {
+        renderTrendCarousel(rawLogs);
+      }
+    } catch (err) {
+      console.warn("JSON読み込み失敗:", err);
     }
+    lucide.createIcons();
+  }
 
     function renderTrendCarousel(rawLogs) {
       const container = document.getElementById('trendCarouselContainer');
