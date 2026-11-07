@@ -338,18 +338,23 @@
 
       let fetchedLogs = [];
       try {
-        // 🌟 全500ファイルを並列スキャンして、対象の videoId のデータを安全に取得
+        // 🌟 500ファイルを50個ずつのチャンクに分けて安全に取得（パンク防止）
         const TOTAL_PARTS = 500;
-        const fetchPromises = [];
-        for (let i = 0; i < TOTAL_PARTS; i++) {
-          fetchPromises.push(
-            fetch(`logs/vocaloid_logs_part_${i}.json`)
-              .then(res => res.ok ? res.json() : [])
-              .catch(() => [])
-          );
+        const CHUNK_SIZE = 50;
+        let allRows = [];
+
+        for (let i = 0; i < TOTAL_PARTS; i += CHUNK_SIZE) {
+          const chunkPromises = [];
+          for (let j = i; j < Math.min(i + CHUNK_SIZE, TOTAL_PARTS); j++) {
+            chunkPromises.push(
+              fetch(`logs/vocaloid_logs_part_${j}.json`)
+                .then(res => res.ok ? res.json() : [])
+                .catch(() => [])
+            );
+          }
+          const chunkResults = await Promise.all(chunkPromises);
+          allRows = allRows.concat(chunkResults.flat());
         }
-        const results = await Promise.all(fetchPromises);
-        const allRows = results.flat();
 
         fetchedLogs = allRows.filter(log => log.video_id === videoId);
       } catch (e) {
