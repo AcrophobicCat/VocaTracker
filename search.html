@@ -269,11 +269,10 @@
         return 0;
       });
 
-      document.getElementById('resultCount').innerText = filtered.length;
-      renderResults(filtered);
-    }
+      // 変更後（スマホの画面上で「全データ中のヒット数」が確認できるようにする）
+    document.getElementById('resultCount').innerText = `${filtered.length}件 (全読込数: ${uniqueSongsList.length}曲中)`;
 
-    function renderResults(songs) {
+   function renderResults(songs) {
       const container = document.getElementById('resultsGrid');
       if (songs.length === 0) {
         container.innerHTML = `
