@@ -350,21 +350,30 @@ function getGroupIndex(videoId, totalGroups = 50) {
 let allLogsForSong = [];
 try {
     const groupIdx = getGroupIndex(videoId);
-    const res = await fetch(`./logs/song_group_${groupIdx}.json`);
+    
+    // 確実に取得するためのフルパス指定
+    const pathSegments = window.location.pathname.split('/');
+    const repoPath = pathSegments.length > 2 && pathSegments[1] !== '' && !pathSegments[1].endsWith('.html') 
+        ? `/${pathSegments[1]}` 
+        : '';
+    const targetUrl = `${window.location.origin}${repoPath}/logs/song_group_${groupIdx}.json`;
+    
+    const res = await fetch(targetUrl);
     
     if (!res.ok) {
-        throw new Error(`HTTPエラー: ${res.status} (グループ${groupIdx})`);
+        throw new Error(`HTTP ${res.status}: ファイル取得失敗 (${targetUrl})`);
     }
     
     const groupData = await res.json();
     allLogsForSong = groupData[videoId] || [];
     
     if (allLogsForSong.length === 0) {
-        throw new Error(`ID "${videoId}" がJSON内に見つかりません`);
+        throw new Error(`ID "${videoId}" がグループ ${groupIdx} のJSON内にありません`);
     }
+    
 } catch (e) {
-    // 🌟 iPhoneの画面上にエラー内容を赤文字っぽく表示させる
-    document.getElementById('songTitle').innerText = '【エラー発生】 ' + e.message;
+    // 🌟 iPhoneの画面上にエラー内容を赤字っぽく表示させる
+    document.getElementById('songTitle').innerText = "❌ エラー発生: " + e.message;
     console.error(e);
     allLogsForSong = getSampleLogs(videoId);
 }
