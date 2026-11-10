@@ -346,32 +346,28 @@ function getGroupIndex(videoId, totalGroups = 50) {
       document.getElementById('songThumbnail').src = thumbnailUrl;
       document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${videoId}`;
 
-// 🔍 デバッグ用：どこで止まっているか画面に表示する
-    let allLogsForSong = [];
-    try {
-        const groupIdx = getGroupIndex(videoId); // 0〜49の番号を算出
-        const targetUrl = `logs/song_group_${groupIdx}.json`;
-        
-        const res = await fetch(targetUrl);
-        if (!res.ok) {
-            throw new Error(`ファイル取得失敗: ${res.status} (${targetUrl})`);
-        }
-        
-        const groupData = await res.json();
-        
-        // 取得できたかチェック
-        if (!groupData[videoId]) {
-            throw new Error(`ID "${videoId}" がグループ ${groupIdx} のJSON内にありません`);
-        }
-        
-        allLogsForSong = groupData[videoId];
-        
-    } catch (e) {
-        // エラー内容を画面のタイトル部分に赤文字っぽく表示
-        document.getElementById('songTitle').innerText = '【デバッグエラー】 ' + e.message;
-        console.error(e);
-        allLogsForSong = getSampleLogs(videoId);
+// 🌟 新方式：自分の曲が入っているグループファイル（1つだけ）をフェッチ！
+let allLogsForSong = [];
+try {
+    const groupIdx = getGroupIndex(videoId);
+    const res = await fetch(`./logs/song_group_${groupIdx}.json`);
+    
+    if (!res.ok) {
+        throw new Error(`HTTPエラー: ${res.status} (グループ${groupIdx})`);
     }
+    
+    const groupData = await res.json();
+    allLogsForSong = groupData[videoId] || [];
+    
+    if (allLogsForSong.length === 0) {
+        throw new Error(`ID "${videoId}" がJSON内に見つかりません`);
+    }
+} catch (e) {
+    // 🌟 iPhoneの画面上にエラー内容を赤文字っぽく表示させる
+    document.getElementById('songTitle').innerText = '【エラー発生】 ' + e.message;
+    console.error(e);
+    allLogsForSong = getSampleLogs(videoId);
+}
 
     // 見つからない場合のフォールバック（またはデータの整形）
     if (!allLogsForSong || allLogsForSong.length === 0) {
