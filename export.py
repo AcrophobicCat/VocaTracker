@@ -24,15 +24,15 @@ def get_group_index(video_id: str, total_groups: int = TOTAL_GROUPS) -> int:
         hash_int = -((~hash_int & 0xFFFFFFFF) + 1)
         
     return abs(hash_int) % total_groups
-    
+
 def datetime_serializer(obj):
     """日時オブジェクトのJSONシリアライズ対策"""
     if hasattr(obj, 'isoformat'):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
 
-def export_table_to_single_json(client: bigquery.Client, query: str, output_path: str, label: str):
-    """単一のサマリーJSONをエクスポートする汎用関数"""
+def export_table_to_single_json(client: bigquery.Client, query: str, filename: str, label: str):
+    """単一のサマリーJSONを logs ディレクトリにエクスポートする汎用関数"""
     print(f"📦 [{label}] データの取得中...")
     query_job = client.query(query)
     rows = query_job.result()
@@ -46,12 +46,16 @@ def export_table_to_single_json(client: bigquery.Client, query: str, output_path
                 row_dict[k] = v.isoformat()
         data.append(row_dict)
         
+    # 🌟 修正: 確実に logs フォルダ内に保存するようにパスを結合
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    output_path = os.path.join(OUTPUT_DIR, filename)
+    
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print(f"✅ [{label}] 保存完了 ({len(data)} 件) -> {output_path}")
 
 def export_grouped_logs(client: bigquery.Client, query: str, file_prefix: str, label: str):
-    """50グループにハッシュ分散して書き出す汎用関数"""
+    """50グループにハッシュ分散して logs ディレクトリに書き出す汎用関数"""
     print(f"📦 [{label}] 50グループ分割データの取得中...")
     query_job = client.query(query)
     rows = query_job.result()
@@ -82,7 +86,7 @@ def export_grouped_logs(client: bigquery.Client, query: str, file_prefix: str, l
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(groups_data[i], f, ensure_ascii=False)
             
-    print(f"✅ [{label}] 50グループ出力完了 (全 {count} 行) -> {file_prefix}_0.json 〜 {file_prefix}_{TOTAL_GROUPS-1}.json")
+    print(f"✅ [{label}] 50グループ出力完了 (全 {count} 行) -> {file_prefix}_0.json 〜 {file_prefix}_{TOTAL_GROUPS-1}.json (in {OUTPUT_DIR}/)")
 
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
