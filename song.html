@@ -346,38 +346,36 @@ function getGroupIndex(videoId, totalGroups = 50) {
       document.getElementById('songThumbnail').src = thumbnailUrl;
       document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${videoId}`;
 
-      // 🌟 新方式：自分の曲が入っているグループファイル（1つだけ）をフェッチ！
-let allLogsForSong = [];
-try {
-    const groupIdx = getGroupIndex(videoId); // 0〜49の番号を算出
-    const res = await fetch(`logs/song_group_${groupIdx}.json`);
-    
-    if (res.ok) {
-        const groupData = await res.json();
-        // そのグループ内の該当 video_id の配列を取り出す
-        allLogsForSong = groupData[videoId] || [];
-    } else {
+// 🌟 新方式：自分の曲が入っているグループファイル（1つだけ）をフェッチ！
+    let allLogsForSong = [];
+    try {
+        const groupIdx = getGroupIndex(videoId); // 0〜49の番号を算出
+        const res = await fetch(`logs/song_group_${groupIdx}.json`);
+        
+        if (res.ok) {
+            const groupData = await res.json();
+            // そのグループ内の該当 video_id の配列を取り出す
+            allLogsForSong = groupData[videoId] || [];
+        } else {
+            allLogsForSong = getSampleLogs(videoId);
+        }
+    } catch (e) {
+        console.log('楽曲データの取得に失敗しました。', e);
         allLogsForSong = getSampleLogs(videoId);
     }
-} catch (e) {
-    console.log('楽曲データの取得に失敗しました。', e);
-    allLogsForSong = getSampleLogs(videoId);
-}
 
-      // 該当データが見つかった場合の整形
-      if (fetchedLogs && fetchedLogs.length > 0) {
-        allLogsForSong = fetchedLogs
+    // 見つからない場合のフォールバック（またはデータの整形）
+    if (!allLogsForSong || allLogsForSong.length === 0) {
+        allLogsForSong = getSampleLogs(videoId);
+    } else {
+        // 該当データが見つかった場合の整形と日付ソート
+        allLogsForSong = allLogsForSong
           .map(log => ({
             ...log,
             updated_at: formatDateTime(log.updated_at)
           }))
           .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-      }
-
-      // 見つからない場合のフォールバック
-      if (!allLogsForSong || allLogsForSong.length === 0) {
-        allLogsForSong = getSampleLogs(videoId);
-      }
+    }
 
       const latest = allLogsForSong[0];
       
