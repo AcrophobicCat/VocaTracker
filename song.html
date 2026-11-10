@@ -359,10 +359,12 @@ function getGroupIndex(videoId, totalGroups = 50) {
         } else {
             allLogsForSong = getSampleLogs(videoId);
         }
-    } catch (e) {
-        console.log('楽曲データの取得に失敗しました。', e);
-        allLogsForSong = getSampleLogs(videoId);
-    }
+} catch (e) {
+    console.log('楽曲データの取得に失敗しました。', e);
+    // 🌟 iPhoneの画面上にもエラーを表示させる
+    document.getElementById('songTitle').innerText = 'エラー: ' + e.message;
+    allLogsForSong = getSampleLogs(videoId);
+}
 
     // 見つからない場合のフォールバック（またはデータの整形）
     if (!allLogsForSong || allLogsForSong.length === 0) {
