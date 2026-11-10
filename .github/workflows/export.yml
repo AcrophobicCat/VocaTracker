@@ -3,7 +3,7 @@ name: BQ to GitHub Export
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 3 * * *'
+  -  cron: '17 3 * * *'
 
 permissions:
   contents: write
@@ -14,40 +14,43 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    -  name: Checkout repository
+       uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
+    -  name: Set up Python
+       uses: actions/setup-python@v5
+       with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
+    -  name: Install dependencies
+       run: |
           pip install google-cloud-bigquery db-dtypes
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
+    -  name: Authenticate to Google Cloud
+       uses: google-github-actions/auth@v2
+       with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Run Export Script
-        run: python export.py
-        env:
+    -  name: Run Export Script
+       run: python export.py
+       env:
           BQ_PROJECT_ID: "youtube-vocaloid-song-trackar"
           BQ_DATASET_ID: "data"
 
-      - name: Commit and push changes
-        run: |
-         git config --global user.name "github-actions[bot]"
-         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-         git add logs/ *.json
-         git status
-         git diff-index --quiet HEAD || (git commit -m "Auto-export analytics summaries & grouped logs [skip ci]" && git push)
+    -  name: Commit and push changes
+       run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 🌟 修正：*.json の一括指定を外し、logs/ ディレクトリのみを対象にする
+          git add logs/
+          
+          git status
+          git diff-index --quiet HEAD || (git commit -m "Auto-export analytics summaries & grouped logs [skip ci]" && git push)
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
+    -  name: Upload Pages artifact
+       uses: actions/upload-pages-artifact@v3
+       with:
           path: '.'
 
   deploy:
