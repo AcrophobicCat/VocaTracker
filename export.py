@@ -10,13 +10,21 @@ OUTPUT_DIR = "logs"
 TOTAL_GROUPS = 50  # song.html / チャート用時系列ログの分割数
 
 def get_group_index(video_id: str, total_groups: int = TOTAL_GROUPS) -> int:
-    """video_idのハッシュ値から0〜(total_groups-1)のグループインデックスを決定"""
+    """video_idのハッシュ値から0〜(total_groups-1)のグループインデックスを決定 (JSと完全一致)"""
     if not video_id:
         return 0
-    # MD5ハッシュ値の整数表現をもとにモジュロ演算（BigQueryのFARM_FINGERPRINTと整合性を保つ場合は適切なハッシュ関数を使用）
-    hash_int = int(hashlib.md5(video_id.encode('utf-8')).hexdigest(), 16)
-    return hash_int % total_groups
-
+    
+    hash_int = 0
+    for char in video_id:
+        # JavaScriptの (hash << 5) - hash + charCodeAt(i) と同等の計算
+        hash_int = ((hash_int << 5) - hash_int + ord(char)) & 0xFFFFFFFF
+    
+    # 符号付き32bit整数に変換（JSの `hash |= 0` と一致させる）
+    if hash_int & 0x80000000:
+        hash_int = -((~hash_int & 0xFFFFFFFF) + 1)
+        
+    return abs(hash_int) % total_groups
+    
 def datetime_serializer(obj):
     """日時オブジェクトのJSONシリアライズ対策"""
     if hasattr(obj, 'isoformat'):
