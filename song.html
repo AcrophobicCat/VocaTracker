@@ -324,6 +324,16 @@
       return `${yyyy}/${mm}/${dd}`;
     }
 
+// video_idから0〜49のグループ番号を割り出す関数
+function getGroupIndex(videoId, totalGroups = 50) {
+  let hash = 0;
+  for (let i = 0; i < videoId.length; i++) {
+    hash = (hash << 5) - hash + videoId.charCodeAt(i);
+    hash |= 0; // 32bit整数に変換
+  }
+  return Math.abs(hash) % totalGroups;
+}
+
     async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
@@ -336,30 +346,23 @@
       document.getElementById('songThumbnail').src = thumbnailUrl;
       document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${videoId}`;
 
-      let fetchedLogs = [];
-      try {
-        // 🌟 500ファイルを50個ずつのチャンクに分けて安全に取得（パンク防止）
-        const TOTAL_PARTS = 500;
-        const CHUNK_SIZE = 50;
-        let allRows = [];
-
-        for (let i = 0; i < TOTAL_PARTS; i += CHUNK_SIZE) {
-          const chunkPromises = [];
-          for (let j = i; j < Math.min(i + CHUNK_SIZE, TOTAL_PARTS); j++) {
-            chunkPromises.push(
-              fetch(`logs/vocaloid_logs_part_${j}.json`)
-                .then(res => res.ok ? res.json() : [])
-                .catch(() => [])
-            );
-          }
-          const chunkResults = await Promise.all(chunkPromises);
-          allRows = allRows.concat(chunkResults.flat());
-        }
-
-        fetchedLogs = allRows.filter(log => log.video_id === videoId);
-      } catch (e) {
-        console.log('JSONファイルの取得に失敗しました。', e);
-      }
+      // 🌟 新方式：自分の曲が入っているグループファイル（1つだけ）をフェッチ！
+let allLogsForSong = [];
+try {
+    const groupIdx = getGroupIndex(videoId); // 0〜49の番号を算出
+    const res = await fetch(`logs/song_group_${groupIdx}.json`);
+    
+    if (res.ok) {
+        const groupData = await res.json();
+        // そのグループ内の該当 video_id の配列を取り出す
+        allLogsForSong = groupData[videoId] || [];
+    } else {
+        allLogsForSong = getSampleLogs(videoId);
+    }
+} catch (e) {
+    console.log('楽曲データの取得に失敗しました。', e);
+    allLogsForSong = getSampleLogs(videoId);
+}
 
       // 該当データが見つかった場合の整形
       if (fetchedLogs && fetchedLogs.length > 0) {
@@ -595,7 +598,7 @@
       cancelTitleEdit();
     }
 
-    function renderViewsChart(labels, data) {
+function renderViewsChart(labels, data) {
       const ctx = document.getElementById('viewsChart').getContext('2d');
       if (viewsChartInstance) viewsChartInstance.destroy();
 
@@ -706,8 +709,4 @@
 
     window.onload = () => {
       initSongPage();
-      lucide.createIcons();
-    };
-  </script>
-</body>
-</html>
+      lucide
