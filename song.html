@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>楽曲詳細 - VocaTracker</title>
+  <!-- Content Security Policy (Tailwind CDN / Firebase / Chart.js / Lucide を正しく許可) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://www.gstatic.com https://www.googletagmanager.com https://*.google-analytics.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https://img.youtube.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.googleapis.com https://*.google-analytics.com https://*.analytics.google.com https://*.firebaseio.com;">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -23,7 +23,7 @@
           }
         }
       }
-    }
+    };
   </script>
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
@@ -79,7 +79,17 @@
 
   <!-- Main Content -->
   <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
-    
+
+    <!-- 診断・エラー表示バナー（データ取得に失敗した場合のみ表示され、上書きされません） -->
+    <div id="errorBanner" class="hidden bg-rose-950/80 border border-rose-500/60 rounded-2xl p-4 space-y-2 shadow-xl">
+      <div class="flex items-center gap-2 text-rose-300 font-bold text-sm">
+        <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
+        <span>楽曲データの読み込みに失敗しました（サンプルデータを表示中）</span>
+      </div>
+      <p id="errorBannerMessage" class="text-xs text-rose-200 font-mono break-all bg-slate-950/60 p-2.5 rounded-lg border border-rose-900/60"></p>
+      <p id="errorBannerHint" class="text-[11px] text-rose-300/90"></p>
+    </div>
+
     <!-- Song Header Card -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row items-center gap-6 shadow-xl">
       <a id="thumbnailLink" href="#" target="_blank" rel="noopener" class="w-full md:w-56 shrink-0 aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700/60 relative group shadow-lg block hover:border-cyan-500 transition">
@@ -138,7 +148,6 @@
       </h3>
 
       <div class="space-y-4 text-sm">
-        
         <!-- ① 使用ボーカルタグ -->
         <div class="space-y-2">
           <div class="flex items-center gap-2 flex-wrap">
@@ -177,7 +186,6 @@
             <button onclick="addTag('free')" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -261,46 +269,105 @@
 
   <!-- Firebase Initialization Script -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+      const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js");
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
-      authDomain: "vocaloid-song-trackar.firebaseapp.com",
-      projectId: "youtube-vocaloid-song-trackar",
-      storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
-      messagingSenderId: "543125801305",
-      appId: "1:543125801305:web:7556f46309f798105f6448",
-      measurementId: "G-L6NMKP7QQQ"
-    };
+      const firebaseConfig = {
+        apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+        authDomain: "vocaloid-song-trackar.firebaseapp.com",
+        projectId: "youtube-vocaloid-song-trackar",
+        storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+        messagingSenderId: "543125801305",
+        appId: "1:543125801305:web:7556f46309f798105f6448",
+        measurementId: "G-L6NMKP7QQQ"
+      };
 
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+      const app = initializeApp(firebaseConfig);
+      getAnalytics(app);
+    } catch (e) {
+      // Firebase読み込み失敗時もメイン処理に影響させない
+      console.warn("Firebase初期化スキップ:", e);
+    }
   </script>
 
   <!-- Application Logic Script -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const videoId = urlParams.get('id');
+    const videoId = (urlParams.get('id') || '').trim();
 
+    // グローバル状態（initSongPage内で再宣言しない）
     let allLogsForSong = [];
     let viewsChartInstance = null;
     let dailyBarChartInstance = null;
     let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
 
-    function formatDateTime(rawDate) {
-      if (!rawDate) return '---';
-      if (typeof rawDate === 'string' && rawDate.includes('/')) {
-        return rawDate;
-      }
+    /**
+     * HTML特殊文字をエスケープするユーティリティ
+     */
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
 
-      let d = new Date(rawDate);
-      if (isNaN(d.getTime()) && !isNaN(Number(rawDate))) {
+    /**
+     * エラー診断バナーを表示する（iPhone等のコンソールが見られない環境向け）
+     */
+    function showErrorBanner(message, hint = '') {
+      const banner = document.getElementById('errorBanner');
+      const msgEl = document.getElementById('errorBannerMessage');
+      const hintEl = document.getElementById('errorBannerHint');
+      if (banner && msgEl) {
+        msgEl.innerText = message;
+        if (hintEl) hintEl.innerText = hint;
+        banner.classList.remove('hidden');
+      }
+    }
+
+    /**
+     * Safari（iPhone）でも安全に日付文字列を Date オブジェクトへ変換する関数
+     * BigQueryの "YYYY-MM-DD HH:MM:SS UTC" や "YYYY-MM-DD HH:MM:SS+00:00" に対応
+     */
+    function parseSafeDate(rawDate) {
+      if (!rawDate) return new Date(NaN);
+      if (rawDate instanceof Date) return rawDate;
+
+      // Unixタイムスタンプ（数値または数字のみの文字列）
+      if (typeof rawDate === 'number' || /^\d+(\.\d+)?$/.test(String(rawDate).trim())) {
         let num = Number(rawDate);
         if (num < 10000000000) num *= 1000;
-        d = new Date(num);
+        return new Date(num);
       }
 
+      let str = String(rawDate).trim();
+
+      // BigQuery形式: "2026-11-19 09:00:25 UTC" -> "2026-11-19T09:00:25Z"
+      if (str.endsWith(' UTC')) {
+        str = str.replace(' ', 'T').replace(' UTC', 'Z');
+      } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(str)) {
+        // タイムゾーンオフセット(+00:00 等)があれば T 区切り、なければスラッシュ区切りに変換
+        if (/[+-]\d{2}:?\d{2}$|Z$/i.test(str)) {
+          str = str.replace(/\s+/, 'T');
+        } else {
+          str = str.replace(/-/g, '/');
+        }
+      }
+
+      return new Date(str);
+    }
+
+    /**
+     * 日付を "YYYY/MM/DD HH:MM:SS" 形式へ整形
+     */
+    function formatDateTime(rawDate) {
+      if (!rawDate) return '---';
+      const d = parseSafeDate(rawDate);
       if (isNaN(d.getTime())) {
         return String(rawDate);
       }
@@ -315,8 +382,12 @@
       return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
     }
 
+    /**
+     * 0:30基準（30分シフト）の日付文字列を取得
+     */
     function getShiftedDayStr(dateStr) {
-      const d = new Date(dateStr);
+      const d = parseSafeDate(dateStr);
+      if (isNaN(d.getTime())) return '日付不明';
       const shifted = new Date(d.getTime() - 30 * 60 * 1000);
       const yyyy = shifted.getFullYear();
       const mm = String(shifted.getMonth() + 1).padStart(2, '0');
@@ -324,86 +395,133 @@
       return `${yyyy}/${mm}/${dd}`;
     }
 
-// video_idから0〜49のグループ番号を割り出す関数
-function getGroupIndex(videoId, totalGroups = 50) {
-  let hash = 0;
-  for (let i = 0; i < videoId.length; i++) {
-    hash = (hash << 5) - hash + videoId.charCodeAt(i);
-    hash |= 0; // 32bit整数に変換
-  }
-  return Math.abs(hash) % totalGroups;
-}
+    /**
+     * video_idから0〜49のグループ番号を割り出す関数（Python側と一致させること）
+     */
+    function getGroupIndex(vid, totalGroups = 50) {
+      let hash = 0;
+      for (let i = 0; i < vid.length; i++) {
+        hash = (hash << 5) - hash + vid.charCodeAt(i);
+        hash |= 0; // 32bit符号付き整数に変換
+      }
+      return Math.abs(hash) % totalGroups;
+    }
 
+    /**
+     * ログ1件のカラム名の揺れを吸収し、数値を正規化する
+     */
+    function normalizeLogRow(log) {
+      const viewsVal = log.views ?? log.view_count ?? 0;
+      const incVal = log.hourly_inclease ?? log.hourly_increase ?? log.increase ?? 0;
+      const likesVal = log.like_count ?? log.likes ?? 0;
+      const rawTime = log.updated_at ?? log.timestamp ?? log.date ?? '';
+      const parsedDate = parseSafeDate(rawTime);
+
+      return {
+        ...log,
+        views: Number(viewsVal) || 0,
+        hourly_inclease: Number(incVal) || 0,
+        like_count: Number(likesVal) || 0,
+        updated_at: formatDateTime(rawTime),
+        _timestamp: isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime()
+      };
+    }
+
+    /**
+     * ページ初期化処理
+     */
     async function initSongPage() {
       if (!videoId) {
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
+        showErrorBanner('URLに ?id=動画ID が指定されていません。', '例: song.html?id=XXXXXXXXXXX の形式でアクセスしてください。');
         return;
       }
 
       updateAdminUI();
 
-      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      // サムネイル・基本リンクはデータ取得を待たずに即座に反映
+      const thumbnailUrl = `https://img.youtube.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
       document.getElementById('songThumbnail').src = thumbnailUrl;
-      document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+      document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+      document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
+      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
 
-// 🌟 新方式：自分の曲が入っているグループファイル（1つだけ）をフェッチ！
-let allLogsForSong = [];
-try {
-    const groupIdx = getGroupIndex(videoId);
-    
-    // GitHub Pagesのサブディレクトリ対策として、絶対パスベースまたは相対パスを安全に構築
-    const res = await fetch(`./logs/song_group_${groupIdx}.json`);
-    
-    if (!res.ok) {
-        throw new Error(`HTTPエラー: ${res.status} (グループ${groupIdx})`);
-    }
-    
-    const groupData = await res.json();
-    allLogsForSong = groupData[videoId] || [];
-    
-    if (allLogsForSong.length === 0) {
-        throw new Error(`ID "${videoId}" がJSON内に見つかりません`);
-    }
-} catch (e) {
-    // 🌟 iPhoneの画面上にエラー内容を赤文字っぽく表示させる
-    document.getElementById('songTitle').innerText = '【エラー発生】 ' + e.message;
-    console.error(e);
-    allLogsForSong = getSampleLogs(videoId);
-}
+      // グローバル変数をリセット（ここで let を付けない！）
+      allLogsForSong = [];
+      let isFallbackSample = false;
 
-    // 見つからない場合のフォールバック（またはデータの整形）
-    if (!allLogsForSong || allLogsForSong.length === 0) {
-        allLogsForSong = getSampleLogs(videoId);
-    } else {
-        // 該当データが見つかった場合の整形と日付ソート
-        allLogsForSong = allLogsForSong
-          .map(log => ({
-            ...log,
-            updated_at: formatDateTime(log.updated_at)
-          }))
-          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-    }
+      try {
+        const groupIdx = getGroupIndex(videoId, 50);
+        // キャッシュによる古い404・古いJSONの掴み続けを防止
+        const targetPath = `./logs/song_group_${groupIdx}.json`;
+        const res = await fetch(`${targetPath}?t=${Date.now()}`, { cache: 'no-store' });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} (${targetPath} が見つかりません)`);
+        }
+
+        const groupData = await res.json();
+
+        // JSONの構造が「辞書 { videoId: [...] }」でも「配列 [ { video_id: ... } ]」でも対応
+        let extractedLogs = [];
+        if (Array.isArray(groupData)) {
+          extractedLogs = groupData.filter(row => row && (row.video_id === videoId || row.id === videoId));
+        } else if (groupData && typeof groupData === 'object') {
+          extractedLogs = groupData[videoId] || [];
+        }
+
+        if (!Array.isArray(extractedLogs) || extractedLogs.length === 0) {
+          const sampleKeys = Array.isArray(groupData)
+            ? `配列形式 (要素数: ${groupData.length})`
+            : `辞書形式 (キー数: ${Object.keys(groupData || {}).length}, 例: ${Object.keys(groupData || {}).slice(0, 3).join(', ')})`;
+          throw new Error(`グループ${groupIdx} (${targetPath}) に ID "${videoId}" が存在しません。JSON構造: ${sampleKeys}`);
+        }
+
+        // 日時正規化＆新しい順にソート
+        allLogsForSong = extractedLogs
+          .map(normalizeLogRow)
+          .sort((a, b) => b._timestamp - a._timestamp);
+
+      } catch (e) {
+        console.error('楽曲データ取得エラー:', e);
+        isFallbackSample = true;
+        showErrorBanner(
+          e.message,
+          'Python側(export.py)のグループ番号計算(get_group_index)・出力フォルダ(logs/)・JSON形式が一致しているか確認してください。'
+        );
+        allLogsForSong = getSampleLogs(videoId).map(normalizeLogRow);
+      }
 
       const latest = allLogsForSong[0];
-      
+
+      // タイトルとボカロPの反映
       const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
       const displayTitle = customTitles[videoId] || latest.title || `動画ID: ${videoId}`;
       document.getElementById('songTitle').innerText = displayTitle;
 
       const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
-      const displayProducer = customProducers[videoId] || latest.producer || '不明なP';
+      const displayProducer = customProducers[videoId] || latest.producer || latest.channel_title || '不明なP';
       document.getElementById('songProducer').innerText = displayProducer;
 
-      document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
-      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+      // バッジのステータス更新
+      const statusBadge = document.getElementById('songStatusBadge');
+      if (isFallbackSample) {
+        statusBadge.innerText = 'サンプル表示中';
+        statusBadge.className = 'px-2.5 py-1 rounded text-xs font-bold bg-rose-500/20 text-rose-400';
+      } else {
+        statusBadge.innerText = `楽曲詳細 (${allLogsForSong.length}件のログ)`;
+        statusBadge.className = 'px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400';
+      }
 
-      document.getElementById('statCurrentViews').innerText = (latest.views || 0).toLocaleString();
-      document.getElementById('statHourlyInc').innerText = `+${(latest.hourly_inclease || 0).toLocaleString()}`;
-      document.getElementById('statLikes').innerText = (latest.like_count || 0).toLocaleString();
+      // KPIカード更新
+      document.getElementById('statCurrentViews').innerText = latest.views.toLocaleString();
+      document.getElementById('statHourlyInc').innerText = `+${latest.hourly_inclease.toLocaleString()}`;
+      document.getElementById('statLikes').innerText = latest.like_count.toLocaleString();
 
       renderTags();
       updateTagSuggestions();
 
+      // グラフ描画用データの作成（古い順）
       const chronologicalLogs = [...allLogsForSong].reverse();
       const labels = chronologicalLogs.map(l => l.updated_at);
       const viewValues = chronologicalLogs.map(l => l.views);
@@ -412,16 +530,18 @@ try {
       chronologicalLogs.forEach(l => {
         const dayStr = getShiftedDayStr(l.updated_at);
         if (!dailyMap[dayStr]) dailyMap[dayStr] = 0;
-        dailyMap[dayStr] += (l.hourly_inclease || 0);
+        dailyMap[dayStr] += l.hourly_inclease;
       });
       const dailyLabels = Object.keys(dailyMap);
       const dailyValues = Object.values(dailyMap);
 
       renderViewsChart(labels, viewValues);
       renderDailyBarChart(dailyLabels, dailyValues, chronologicalLogs);
-      
       renderLogTable(allLogsForSong);
-      lucide.createIcons();
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
     }
 
     function toggleMobileMenu() {
@@ -431,10 +551,10 @@ try {
 
     function getSongTags() {
       const allTags = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
-      return allTags[videoId] || { 
-        vocal: ['初音ミク'], 
-        credit: ['Music: サンプルP'], 
-        free: ['ボカロ曲', '新曲'] 
+      return allTags[videoId] || {
+        vocal: ['初音ミク'],
+        credit: ['Music: サンプルP'],
+        free: ['ボカロ曲', '新曲']
       };
     }
 
@@ -461,40 +581,44 @@ try {
 
     function renderTags() {
       const tags = getSongTags();
-      
-      const vContainer = document.getElementById('vocalTagsContainer');
-      vContainer.innerHTML = tags.vocal.map(t => {
-        let deleteBtn = isAdminMode ? `<button onclick="removeTag('vocal', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
-        return `<span class="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
-      }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
 
-      const cContainer = document.getElementById('creditTagsContainer');
-      cContainer.innerHTML = tags.credit.map(t => {
-        let deleteBtn = isAdminMode ? `<button onclick="removeTag('credit', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
-        return `<span class="bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
-      }).join('') || '<span class="text-xs text-slate-500">未設定</span>';
+      const buildBadges = (list, type, colorClasses, emptyText) => {
+        if (!list || list.length === 0) {
+          return `<span class="text-xs text-slate-500">${emptyText}</span>`;
+        }
+        return list.map((t, idx) => {
+          const deleteBtn = isAdminMode
+            ? `<button onclick="removeTagByIndex('${type}', ${idx})" class="hover:text-red-400 font-bold ml-1">×</button>`
+            : '';
+          return `<span class="${colorClasses} text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${escapeHTML(t)} ${deleteBtn}</span>`;
+        }).join('');
+      };
 
-      const fContainer = document.getElementById('freeTagsContainer');
-      fContainer.innerHTML = tags.free.map(t => {
-        let deleteBtn = isAdminMode ? `<button onclick="removeTag('free', '${t}')" class="hover:text-red-400 font-bold ml-1">×</button>` : '';
-        return `<span class="bg-cyan-900/40 text-cyan-300 border border-cyan-700/50 text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">${t} ${deleteBtn}</span>`;
-      }).join('') || '<span class="text-xs text-slate-500">タグなし</span>';
+      document.getElementById('vocalTagsContainer').innerHTML = buildBadges(
+        tags.vocal, 'vocal', 'bg-purple-900/40 text-purple-300 border border-purple-700/50', '未設定'
+      );
+      document.getElementById('creditTagsContainer').innerHTML = buildBadges(
+        tags.credit, 'credit', 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/50', '未設定'
+      );
+      document.getElementById('freeTagsContainer').innerHTML = buildBadges(
+        tags.free, 'free', 'bg-cyan-900/40 text-cyan-300 border border-cyan-700/50', 'タグなし'
+      );
     }
 
     function updateTagSuggestions() {
       const masterVocal = JSON.parse(localStorage.getItem('voca_master_vocal_tags')) || ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', '重音テト'];
-      document.getElementById('vocalMasterList').innerHTML = masterVocal.map(t => `<option value="${t}"></option>`).join('');
+      document.getElementById('vocalMasterList').innerHTML = masterVocal.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
 
       const masterCredit = JSON.parse(localStorage.getItem('voca_master_credit_tags')) || ['Music: サンプルP', 'Illustration: ゲスト'];
-      document.getElementById('creditMasterList').innerHTML = masterCredit.map(t => `<option value="${t}"></option>`).join('');
+      document.getElementById('creditMasterList').innerHTML = masterCredit.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
 
       const masterFree = JSON.parse(localStorage.getItem('voca_master_free_tags')) || ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM'];
-      document.getElementById('freeMasterList').innerHTML = masterFree.map(t => `<option value="${t}"></option>`).join('');
+      document.getElementById('freeMasterList').innerHTML = masterFree.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
     }
 
     function addTag(type) {
       if ((type === 'vocal' || type === 'credit') && !isAdminMode) return;
-      
+
       const inputId = type === 'vocal' ? 'newVocalTagInput' : (type === 'credit' ? 'newCreditTagInput' : 'newFreeTagInput');
       const input = document.getElementById(inputId);
       const val = input.value.trim();
@@ -508,11 +632,13 @@ try {
       input.value = '';
     }
 
-    function removeTag(type, tagToRemove) {
+    function removeTagByIndex(type, index) {
       if (!isAdminMode) return;
       const tags = getSongTags();
-      tags[type] = tags[type].filter(t => t !== tagToRemove);
-      saveSongTags(tags);
+      if (Array.isArray(tags[type])) {
+        tags[type].splice(index, 1);
+        saveSongTags(tags);
+      }
     }
 
     function enableProducerEdit() {
@@ -549,7 +675,6 @@ try {
       const mobileIndicator = document.getElementById('mobileAdminStatusIndicator');
       const editBtn = document.getElementById('editTitleBtn');
       const editProducerBtn = document.getElementById('editProducerBtn');
-      
       const vocalEditContainer = document.getElementById('vocalEditContainer');
       const creditEditContainer = document.getElementById('creditEditContainer');
 
@@ -603,7 +728,8 @@ try {
       cancelTitleEdit();
     }
 
-function renderViewsChart(labels, data) {
+    function renderViewsChart(labels, data) {
+      if (typeof Chart === 'undefined') return;
       const ctx = document.getElementById('viewsChart').getContext('2d');
       if (viewsChartInstance) viewsChartInstance.destroy();
 
@@ -617,7 +743,7 @@ function renderViewsChart(labels, data) {
             borderColor: '#06b6d4',
             backgroundColor: 'rgba(6, 182, 212, 0.1)',
             fill: true,
-            tension: 0 // ← 曲線（ベジェ曲線）をオフにして「線形（直線）」で結ぶ設定に変更
+            tension: 0
           }]
         },
         options: {
@@ -633,6 +759,7 @@ function renderViewsChart(labels, data) {
     }
 
     function renderDailyBarChart(labels, data, chronologicalLogs) {
+      if (typeof Chart === 'undefined') return;
       const ctx = document.getElementById('dailyBarChart').getContext('2d');
       if (dailyBarChartInstance) dailyBarChartInstance.destroy();
 
@@ -698,7 +825,7 @@ function renderViewsChart(labels, data) {
       }
       tbody.innerHTML = logs.map(log => `
         <tr class="hover:bg-slate-800/40 transition">
-          <td class="p-3 text-slate-400">${log.updated_at}</td>
+          <td class="p-3 text-slate-400">${escapeHTML(log.updated_at)}</td>
           <td class="p-3 text-right font-medium text-slate-200">${(log.views || 0).toLocaleString()}</td>
           <td class="p-3 text-right text-cyan-400">+${(log.hourly_inclease || 0).toLocaleString()}</td>
           <td class="p-3 text-right text-slate-300">${(log.like_count || 0).toLocaleString()}</td>
@@ -712,6 +839,12 @@ function renderViewsChart(labels, data) {
       ];
     }
 
-    window.onload = () => {
+    window.addEventListener('DOMContentLoaded', () => {
       initSongPage();
-      lucide
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>
