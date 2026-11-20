@@ -1,0 +1,13 @@
+name: Deploy HTML to GitHub Pageson:mainブランチにHTML/CSS/JSの変更がコミットされた時だけ自動実行push:branches:- mainpaths:- '/*.html'
+- '/.css'
+- '/.js'- 'assets/'iPhoneから手動でいつでもPagesだけ再デプロイできるようにするworkflow_dispatch:GitHub Pagesへのデプロイに必要な最小限の権限permissions:contents: readpages: writeid-token: writeデプロイの同時実行による衝突を防止（進行中のデプロイはキャンセルせず順番に処理）concurrency:group: "pages"cancel-in-progress: falsejobs:deploy:environment:name: github-pagesurl: ${{ steps.deployment.outputs.page_url }}runs-on: ubuntu-lateststeps:- name: Checkout repositoryuses: actions/checkout@v4  - name: Setup Pages
+    uses: actions/configure-pages@v5
+
+  - name: Upload Pages artifact
+    uses: actions/upload-pages-artifact@v3
+    with:
+      path: '.'
+
+  - name: Deploy to GitHub Pages
+    id: deployment
+    uses: actions/deploy-pages@v4
