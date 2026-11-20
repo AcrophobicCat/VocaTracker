@@ -4,322 +4,894 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VocaTracker - ボカロ楽曲アナリティクスハブ</title>
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            darkbg: '#0f172a',
-            cardbg: '#1e293b'
+    if (window.tailwind) {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif']
+            },
+            colors: {
+              darkbg: '#0f172a',
+              cardbg: '#1e293b'
+            }
           }
         }
-      }
+      };
     }
   </script>
   <style>
-    body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
-    /* スクロールバーのカスタマイズ（横スクロール用） */
-    .custom-scroll::-webkit-scrollbar { height: 6px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
-    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+    /* song.html と完全統一したサイトアイコンバッジ */
+    .app-icon-badge {
+      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    /* 横スクロールバー非表示（クイックタブ用） */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Charts風スポットライトのフェードアニメーション */
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-fade-in {
+      animation: slideFadeIn 0.35s ease-out;
+    }
   </style>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
-      <a href="index.html" class="flex items-center space-x-2.5">
-        <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white shadow-lg shadow-cyan-500/20">
-          <i data-lucide="activity" class="w-6 h-6"></i>
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur border-b border-slate-800/80 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      <!-- サイトロゴ（song.htmlと統一） -->
+      <a href="index.html" class="flex items-center space-x-2.5 group shrink-0">
+        <div class="w-9 h-9 rounded-xl app-icon-badge flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition">
+          <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
         </div>
-        <div>
-          <h1 class="font-bold text-xl tracking-wider bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">VocaTracker</h1>
-          <p class="text-[10px] text-slate-400">Synthetic Voice Analytics Portal</p>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-sm sm:text-base tracking-wide text-white leading-tight">VocaTracker</span>
+          <span class="text-[10px] text-slate-400 leading-tight hidden sm:block">Vocaloid Analytics Hub</span>
         </div>
       </a>
 
-      <!-- Header Navigation -->
-      <nav class="hidden md:flex items-center space-x-1 text-sm font-medium">
-        <a href="index.html" class="px-3 py-1.5 rounded-lg text-cyan-400 bg-slate-800">ホーム</a>
-        <a href="ranking.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition">ランキング</a>
+      <!-- PC用ナビゲーション -->
+      <nav class="hidden md:flex items-center space-x-1 text-xs font-semibold">
+        <a href="index.html" class="px-3 py-2 rounded-lg text-cyan-400 bg-slate-800/90 border border-slate-700/60">ホーム</a>
+        <a href="ranking.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">ランキング</a>
+        <a href="featured.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">注目曲トラッカー</a>
+        <a href="milestone.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">マイルストーントラッカー</a>
+        <a href="search.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">楽曲検索</a>
       </nav>
 
-      <!-- Mobile Menu Toggle -->
-      <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-400 hover:text-white">
-        <i data-lucide="menu" class="w-6 h-6"></i>
-      </button>
+      <!-- 右側アクション（検索ショートカット + ハンバーガーメニュー） -->
+      <div class="flex items-center gap-2">
+        <a href="search.html" aria-label="楽曲検索" class="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </a>
+        <button onclick="toggleMobileMenu()" id="menuToggleBtn" aria-label="メニューを開く" class="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Mobile Menu Dropdown -->
-    <div id="mobileMenu" class="hidden md:hidden pt-3 border-t border-slate-800 mt-2 space-y-1">
-      <a href="index.html" class="block px-3 py-2 rounded-lg text-cyan-400 bg-slate-800 text-sm">ホーム</a>
-      <a href="ranking.html" class="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 text-sm">ランキング</a>
-      <button onclick="openModal('privacyModal')" class="block w-full text-left px-3 py-2 rounded-lg text-slate-400 text-xs">プライバシーポリシー</button>
+    <!-- ハンバーガーメニュー（全コンテンツリンク集約・PC/スマホ共通で開ける） -->
+    <div id="mobileMenu" class="hidden max-w-6xl mx-auto pt-3 pb-2 border-t border-slate-800/80 mt-3 space-y-1.5">
+      <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">コンテンツ一覧</p>
+      <a href="index.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-cyan-400 bg-slate-800/80 text-sm font-semibold">
+        <i data-lucide="home" class="w-4 h-4 shrink-0"></i>
+        <span>ホーム</span>
+      </a>
+      <a href="ranking.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="trophy" class="w-4 h-4 text-blue-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>再生数ランキング</span>
+          <span class="text-[11px] text-slate-400">昨日・週間・月間・累計TOPランキング</span>
+        </div>
+      </a>
+      <a href="featured.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="flame" class="w-4 h-4 text-orange-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>注目曲トラッカー</span>
+          <span class="text-[11px] text-slate-400">バズレーダー・新曲レーダー統合ページ</span>
+        </div>
+      </a>
+      <a href="milestone.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="target" class="w-4 h-4 text-purple-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>マイルストーントラッカー</span>
+          <span class="text-[11px] text-slate-400">大台突破予測・大台達成アーカイブ統合ページ</span>
+        </div>
+      </a>
+      <a href="search.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>楽曲データベース検索</span>
+          <span class="text-[11px] text-slate-400">曲名・ボカロP・タグ・動画IDから検索</span>
+        </div>
+      </a>
     </div>
   </header>
 
-  <!-- 🌟【ヘッダー直下】YouTube Music Charts風・横スクロール・サムネ付きトレンドチャート -->
-  <section class="bg-slate-900/60 border-b border-slate-800/80 py-4 px-4 overflow-hidden">
-    <div class="max-w-6xl mx-auto space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="p-1.5 bg-orange-500/10 text-orange-400 rounded-lg">
-            <i data-lucide="flame" class="w-4 h-4"></i>
-          </div>
-          <h2 class="text-sm font-extrabold text-white tracking-wide uppercase">トレンド急上昇・ハイライト</h2>
-          <span class="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full font-mono">LIVE</span>
-        </div>
-        <a href="ranking.html" class="text-xs text-slate-400 hover:text-cyan-400 transition flex items-center gap-1">
-          すべてのランキング <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-        </a>
+  <!-- 🌟【ヘッダー直下】YouTube Music Charts風・コンパクトハイライトセクション -->
+  <section class="relative bg-black border-b border-slate-800/80 overflow-hidden">
+    <!-- サムネイル連動のアンビエント背景グロー -->
+    <div id="spotlightAmbientBg" class="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-110 transition-all duration-700 pointer-events-none"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-slate-950/95 pointer-events-none"></div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-4 pt-2 pb-5">
+      <!-- YouTube Music Charts上部風のクイックカテゴリタブ -->
+      <div class="flex items-center gap-5 overflow-x-auto no-scrollbar border-b border-white/10 pb-2.5 mb-5 text-xs sm:text-sm font-semibold">
+        <a href="ranking.html" class="text-white border-b-2 border-white pb-2 -mb-[11px] whitespace-nowrap shrink-0">チャート</a>
+        <a href="featured.html?tab=buzz" class="text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">急上昇・バズ</a>
+        <a href="featured.html?tab=new" class="text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">新曲レーダー</a>
+        <a href="milestone.html?tab=forecast" class="text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">大台突破予測</a>
+        <a href="milestone.html?tab=archive" class="text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">達成アーカイブ</a>
       </div>
 
-      <!-- 横スクロールコンテナ -->
-      <div id="trendCarouselContainer" class="flex gap-4 overflow-x-auto pb-3 pt-1 custom-scroll snap-x snap-mandatory">
-        <!-- JavaScriptで動的生成（スライドカード） -->
+      <!-- コンパクト・スポットライトカルーセル本体（スワイプ対応） -->
+      <div id="spotlightArea" class="relative select-none touch-pan-y">
+        <!-- スライド表示コンテンツ -->
+        <div id="spotlightContent" class="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-7 py-1 sm:py-2 min-h-[260px] sm:min-h-[200px]">
+          <!-- ローディングスケルトン -->
+          <div class="w-44 h-44 sm:w-44 sm:h-44 rounded-2xl bg-slate-800/80 animate-pulse shrink-0"></div>
+          <div class="w-full max-w-md space-y-3 text-left">
+            <div class="h-3 w-32 bg-slate-800 rounded animate-pulse"></div>
+            <div class="h-7 w-full bg-slate-800 rounded animate-pulse"></div>
+            <div class="h-3.5 w-3/4 bg-slate-800 rounded animate-pulse"></div>
+            <div class="h-9 w-36 bg-slate-800 rounded-full animate-pulse mt-2"></div>
+          </div>
+        </div>
+
+        <!-- 下部インジケーター（YouTube Music Charts風ドット＋バー）と左右ボタン -->
+        <div class="flex items-center justify-between mt-4 pt-1">
+          <div id="spotlightIndicators" class="flex items-center gap-2">
+            <!-- JSで動的生成 -->
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="prevSlide()" aria-label="前のハイライト" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="nextSlide()" aria-label="次のハイライト" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Main Content Area -->
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 space-y-10">
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 space-y-8">
 
-    <!-- Hero Section with Search Banner -->
-    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl space-y-6">
-      <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      
-      <div class="max-w-3xl space-y-3">
-        <div class="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-          <span>VocaTracker Static Site Architecture</span>
+    <!-- 楽曲クイック検索バー -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
+          <h2 class="text-sm font-bold text-white">ボカロ楽曲データベース検索</h2>
         </div>
-        <h2 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">ボカロシーンの動向を掴むアナリティクスハブ</h2>
-        <p class="text-sm md:text-base text-slate-300 leading-relaxed">
-          YouTube Data APIとBigQueryによる高精度トラッキングデータを活用。お好みの楽曲やボカロPを検索してみましょう。
-        </p>
+        <span id="lastUpdatedBadge" class="text-[11px] text-slate-400 font-mono">データ同期中...</span>
       </div>
 
-      <!-- Search Form -> search.html へクエリ付きで遷移 -->
-      <form action="search.html" method="GET" class="max-w-xl">
-        <div class="relative shadow-inner rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-700 focus-within:border-cyan-500 transition">
-          <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input type="text" name="q" placeholder="曲名、ボカロP名、ボーカル名、動画IDで検索..." required class="w-full bg-transparent pl-12 pr-28 py-3.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none">
-          <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-md">
-            検索する
+      <form action="search.html" method="GET">
+        <div class="relative rounded-xl overflow-hidden bg-slate-950/80 border border-slate-700/80 focus-within:border-cyan-500 transition">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input
+            type="text"
+            name="q"
+            placeholder="曲名、ボカロP名、タグ、動画IDで検索..."
+            required
+            class="w-full bg-transparent pl-10 pr-24 py-3 text-sm text-slate-100 placeholder-slate-400 focus:outline-none"
+          >
+          <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow">
+            検索
           </button>
         </div>
       </form>
-    </div>
+    </section>
 
-    <!-- Portal Navigation Grid (各ページへのハブカード) -->
+    <!-- 統合アナリティクス・トラッカーハブ -->
     <section class="space-y-4">
-      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-        <i data-lucide="compass" class="w-4 h-4 text-cyan-400"></i> 各種アナリティクス・専用ページ
-      </h3>
-      
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <a href="buzz.html" class="bg-slate-900/80 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-6 transition group block shadow-lg">
-          <div class="flex items-center justify-between mb-4">
-            <div class="p-3 bg-orange-500/10 text-orange-400 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition">
-              <i data-lucide="flame" class="w-6 h-6"></i>
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="compass" class="w-4 h-4 text-cyan-400"></i> トラッカー・ランキング
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <!-- 1. 再生数ランキング -->
+        <a href="ranking.html" class="bg-slate-900/85 border border-slate-800 hover:border-blue-500/60 rounded-2xl p-6 transition group flex flex-col justify-between shadow-lg">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition">
+                <i data-lucide="trophy" class="w-6 h-6"></i>
+              </div>
+              <span id="badgeRankingCount" class="text-[11px] text-blue-400 font-semibold bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-full">RANKING</span>
             </div>
-            <span class="text-xs text-orange-400 font-semibold bg-orange-500/10 px-2.5 py-1 rounded-full">REALTIME</span>
+            <h4 class="font-bold text-lg text-white group-hover:text-blue-400 transition">再生数ランキング</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              昨日増加・週間（7日）・月間（30日）・累計再生数の4軸ランキングと、前日からの順位変動を一覧チェック。
+            </p>
           </div>
-          <h4 class="font-bold text-lg text-white group-hover:text-orange-400 transition">バズレーダー</h4>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">直近の急上昇トレンドをリアルタイムで検知した注目楽曲のまとめ。</p>
+          <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-blue-400 font-semibold">
+            <span>ランキングを見る</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
+          </div>
         </a>
 
-        <a href="newrelease.html" class="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 transition group block shadow-lg">
-          <div class="flex items-center justify-between mb-4">
-            <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition">
-              <i data-lucide="zap" class="w-6 h-6"></i>
+        <!-- 2. 注目曲トラッカー（バズレーダー + 新曲レーダー統合） -->
+        <a href="featured.html" class="bg-slate-900/85 border border-slate-800 hover:border-orange-500/60 rounded-2xl p-6 transition group flex flex-col justify-between shadow-lg">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="p-3 bg-gradient-to-br from-orange-500/15 to-emerald-500/15 text-orange-400 rounded-xl group-hover:from-orange-500 group-hover:to-amber-500 group-hover:text-white transition">
+                <i data-lucide="flame" class="w-6 h-6"></i>
+              </div>
+              <span id="badgeFeaturedCount" class="text-[11px] text-orange-400 font-semibold bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-full">BUZZ & NEW</span>
             </div>
-            <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full">14 DAYS</span>
+            <h4 class="font-bold text-lg text-white group-hover:text-orange-400 transition">注目曲トラッカー</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              加速中の急上昇曲を検知する「バズレーダー」と、投稿14日以内の勢いある作品を追う「新曲レーダー」を統合。
+            </p>
+            <div class="flex flex-wrap gap-1.5 mt-3">
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-300 border border-orange-500/20">バズレーダー</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">新曲レーダー</span>
+            </div>
           </div>
-          <h4 class="font-bold text-lg text-white group-hover:text-emerald-400 transition">新曲レーダー</h4>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">投稿から14日以内のフレッシュなニューリリース作品をピックアップ。</p>
+          <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-orange-400 font-semibold">
+            <span>注目曲をチェック</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
+          </div>
         </a>
 
-        <a href="forecast.html" class="bg-slate-900/80 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-6 transition group block shadow-lg">
-          <div class="flex items-center justify-between mb-4">
-            <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl group-hover:bg-purple-500 group-hover:text-white transition">
-              <i data-lucide="target" class="w-6 h-6"></i>
+        <!-- 3. マイルストーントラッカー（大台突破予測 + 大台達成アーカイブ統合） -->
+        <a href="milestone.html" class="bg-slate-900/85 border border-slate-800 hover:border-purple-500/60 rounded-2xl p-6 transition group flex flex-col justify-between shadow-lg">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="p-3 bg-gradient-to-br from-purple-500/15 to-amber-500/15 text-purple-400 rounded-xl group-hover:from-purple-500 group-hover:to-indigo-500 group-hover:text-white transition">
+                <i data-lucide="target" class="w-6 h-6"></i>
+              </div>
+              <span id="badgeMilestoneCount" class="text-[11px] text-purple-300 font-semibold bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full">MILESTONE</span>
             </div>
-            <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-2.5 py-1 rounded-full">FORECAST</span>
+            <h4 class="font-bold text-lg text-white group-hover:text-purple-400 transition">マイルストーントラッカー</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              ミリオン・1,000万・1億再生までの到達予測カウントダウンと、過去の大台達成アーカイブを1画面で切り替え。
+            </p>
+            <div class="flex flex-wrap gap-1.5 mt-3">
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">大台突破予測</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">達成アーカイブ</span>
+            </div>
           </div>
-          <h4 class="font-bold text-lg text-white group-hover:text-purple-400 transition">大台達成予測</h4>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">ミリオンや神話入り到達までのカウントダウン推計。</p>
+          <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-purple-400 font-semibold">
+            <span>マイルストーンを見る</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
+          </div>
         </a>
 
-        <a href="archive.html" class="bg-slate-900/80 border border-slate-800 hover:border-yellow-500/50 rounded-2xl p-6 transition group block shadow-lg">
-          <div class="flex items-center justify-between mb-4">
-            <div class="p-3 bg-yellow-500/10 text-yellow-400 rounded-xl group-hover:bg-yellow-500 group-hover:text-white transition">
-              <i data-lucide="award" class="w-6 h-6"></i>
-            </div>
-            <span class="text-xs text-yellow-400 font-semibold bg-yellow-500/10 px-2.5 py-1 rounded-full">ARCHIVE</span>
-          </div>
-          <h4 class="font-bold text-lg text-white group-hover:text-yellow-400 transition">大台突破アーカイブ</h4>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">過去に大台を達成した歴史的な記録・マイルストーンの数々。</p>
-        </a>
-
-        <a href="ranking.html" class="bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-6 transition group block shadow-lg">
-          <div class="flex items-center justify-between mb-4">
-            <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition">
-              <i data-lucide="trophy" class="w-6 h-6"></i>
-            </div>
-            <span class="text-xs text-blue-400 font-semibold bg-blue-500/10 px-2.5 py-1 rounded-full">TOP 100</span>
-          </div>
-          <h4 class="font-bold text-lg text-white group-hover:text-blue-400 transition">再生数ランキング</h4>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">累積再生数に基づく総合ランキング上位100曲の一覧。</p>
-        </a>
       </div>
     </section>
 
   </main>
 
   <!-- Footer -->
-  <footer class="bg-slate-900 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500 space-y-3 mt-12">
-    <p>© 2026 VocaTracker. Non-commercial Fan Data Portal.</p>
-    <div class="flex justify-center space-x-4">
-      <button onclick="openModal('privacyModal')" class="hover:underline">プライバシーポリシー</button>
-      <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" class="hover:underline">YouTube 利用規約</a>
+  <footer class="bg-slate-950 border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-500 space-y-4 mt-10">
+    <div class="flex items-center justify-center gap-2 text-slate-400 font-semibold">
+      <div class="w-6 h-6 rounded-lg app-icon-badge flex items-center justify-center text-white">
+        <i data-lucide="activity" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+      </div>
+      <span>VocaTracker</span>
+    </div>
+    <p>© 2026 VocaTracker. Non-commercial Vocaloid Data Analytics Portal.</p>
+    <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 text-slate-400">
+      <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" class="hover:text-white hover:underline transition">
+        YouTube 利用規約
+      </a>
+      <button onclick="openModal('privacyModal')" class="hover:text-white hover:underline transition">
+        プライバシーポリシー
+      </button>
+      <button onclick="openModal('adminLoginModal')" class="inline-flex items-center gap-1 hover:text-cyan-400 transition">
+        <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+        <span id="footerAdminLabel">管理者ログイン</span>
+      </button>
     </div>
   </footer>
 
-  <!-- MODAL -->
+  <!-- プライバシーポリシー MODAL -->
   <div id="privacyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 space-y-4 text-sm text-slate-300 relative">
-      <button onclick="closeModal('privacyModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[82vh] overflow-y-auto p-6 space-y-4 text-sm text-slate-300 relative shadow-2xl">
+      <button onclick="closeModal('privacyModal')" aria-label="閉じる" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-      <h3 class="text-lg font-bold text-white">プライバシーポリシー</h3>
-      <p class="text-xs text-slate-400">当サイトは YouTube Data API を使用して公開動画の統計データを取得・可視化しています。</p>
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i> プライバシーポリシー
+      </h3>
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <p>当サイト「VocaTracker」は、YouTube Data API サービスを利用して公開動画の統計データ（再生数・高評価数・投稿日時・タイトル等）を取得し、ボーカロイド楽曲のトレンド分析・可視化を行っています。</p>
+        <p>当サイトの利用者は、YouTube 利用規約（<a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" class="text-cyan-400 underline">https://www.youtube.com/t/terms</a>）および Google プライバシーポリシー（<a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-cyan-400 underline">https://policies.google.com/privacy</a>）に同意するものとします。</p>
+        <p>また、サイトの利便性向上とアクセス解析のために Firebase Analytics およびブラウザのローカルストレージ（カスタムタグ・表示設定の保存）を使用する場合があります。個人を特定する情報の収集は行いません。</p>
+      </div>
+      <div class="pt-2 text-right">
+        <button onclick="closeModal('privacyModal')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">閉じる</button>
+      </div>
     </div>
   </div>
 
+  <!-- 管理者ログイン MODAL（将来の admin.html 連携用） -->
+  <div id="adminLoginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 space-y-5 text-sm text-slate-300 relative shadow-2xl">
+      <button onclick="closeModal('adminLoginModal')" aria-label="閉じる" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-5 h-5 text-cyan-400"></i> 管理者ログイン
+        </h3>
+        <p class="text-xs text-slate-400">楽曲情報の編集モードや管理者メニューへアクセスします。</p>
+      </div>
+
+      <!-- ステータス表示 -->
+      <div id="adminModalStatusBox" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs flex items-center justify-between">
+        <span class="text-slate-400">現在の状態:</span>
+        <span id="adminModalStatusText" class="font-bold text-slate-300">🔒 一般閲覧モード</span>
+      </div>
+
+      <!-- メッセージ表示領域（alertの代わり） -->
+      <div id="adminLoginFeedback" class="hidden text-xs px-3 py-2 rounded-lg"></div>
+
+      <!-- ログインフォーム -->
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="space-y-3">
+        <div class="space-y-1.5">
+          <label for="adminPasscodeInput" class="text-xs font-semibold text-slate-300">管理者パスコード</label>
+          <input
+            type="password"
+            id="adminPasscodeInput"
+            placeholder="パスコードを入力..."
+            autocomplete="current-password"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+          >
+          <p class="text-[10px] text-slate-500">※ 管理者ページ（admin.html）は今後拡張予定です。現在は管理者モードの有効化・切替が可能です。</p>
+        </div>
+        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow">
+          管理者モードを有効にする
+        </button>
+      </form>
+
+      <!-- ログイン済みの場合のアクション -->
+      <div id="adminLoggedInActions" class="hidden space-y-2.5">
+        <a href="admin.html" class="w-full inline-flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 管理者ページへ移動 (admin.html)
+        </a>
+        <button onclick="logoutAdmin()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition">
+          一般閲覧モードに戻る（ログアウト）
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
   <script>
-    function escapeHTML(str) {
-      if (!str) return '';
-      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    // 安全な localStorage ヘルパー
+    function safeGetStorage(key, fallback = null) {
+      try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+      } catch (e) {
+        return fallback;
+      }
     }
 
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn('localStorage保存スキップ:', e);
+      }
+    }
+
+    function safeGetJSON(key, fallback = {}) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    function parseSafeDate(rawDate) {
+      if (!rawDate) return new Date(NaN);
+      let str = String(rawDate).trim();
+      if (str.endsWith(' UTC')) {
+        str = str.replace(' ', 'T').replace(' UTC', 'Z');
+      } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(str)) {
+        str = /[+-]\d{2}:?\d{2}$|Z$/i.test(str) ? str.replace(/\s+/, 'T') : str.replace(/-/g, '/');
+      }
+      return new Date(str);
+    }
+
+    function formatShortDate(rawDate) {
+      const d = parseSafeDate(rawDate);
+      if (isNaN(d.getTime())) return '';
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getFullYear()}/${mm}/${dd} ${hh}:${min}`;
+    }
+
+    // スポットライトスライドの状態管理
+    let spotlightSlides = [];
+    let currentSlideIndex = 0;
+    let autoSlideTimer = null;
+
+    // 軽量JSONを安全にフェッチ
+    async function fetchJsonSafe(path) {
+      try {
+        const url = new URL(path, window.location.href).href;
+        const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch (e) {
+        console.warn(`JSON読み込みスキップ (${path}):`, e);
+        return [];
+      }
+    }
+
+    /**
+     * 各トラッカー用の軽量JSONから YouTube Music Charts風スライドを自動生成
+     */
     async function initPortal() {
-    const TOTAL_PARTS = 500;
-    let rawLogs = [];
-    try {
-      const fetchPromises = [];
-      for (let i = 0; i < TOTAL_PARTS; i++) {
-        fetchPromises.push(
-          fetch(`logs/vocaloid_logs_part_${i}.json`)
-            .then(res => res.ok ? res.json() : [])
-            .catch(() => [])
+      updateAdminModalUI();
+
+      // 500分割フェッチを完全廃止し、軽量サマリーJSONのみ並列取得
+      const [rankings, buzzList, newList, milestoneStatus, milestoneHistory] = await Promise.all([
+        fetchJsonSafe('logs/rankings.json'),
+        fetchJsonSafe('logs/buzz_radar.json'),
+        fetchJsonSafe('logs/new_release.json'),
+        fetchJsonSafe('logs/milestones_status.json'),
+        fetchJsonSafe('logs/milestones_history.json')
+      ]);
+
+      // ハブカードのバッジ件数・更新時刻を反映
+      if (rankings.length > 0) {
+        document.getElementById('badgeRankingCount').innerText = `TOP ${rankings.length}`;
+        const latestUpdated = rankings[0].updated_at;
+        if (latestUpdated) {
+          document.getElementById('lastUpdatedBadge').innerText = `最終更新: ${formatShortDate(latestUpdated)}`;
+        }
+      } else {
+        document.getElementById('lastUpdatedBadge').innerText = 'BigQuery 定期同期';
+      }
+
+      const featuredTotal = buzzList.length + newList.length;
+      if (featuredTotal > 0) {
+        document.getElementById('badgeFeaturedCount').innerText = `注目 ${featuredTotal}曲`;
+      }
+
+      const milestoneTotal = milestoneStatus.length + milestoneHistory.length;
+      if (milestoneTotal > 0) {
+        document.getElementById('badgeMilestoneCount').innerText = `予測 ${milestoneStatus.length} / 達成 ${milestoneHistory.length}`;
+      }
+
+      // スライドデータ組み立て
+      const customTitles = safeGetJSON('voca_custom_titles', {});
+      const slides = [];
+      const usedVideoIds = new Set();
+
+      const getTitle = (item) => customTitles[item.video_id] || item.title || item.display_title || `動画ID: ${item.video_id}`;
+
+      // スライド1: 昨日増加ランキング1位
+      const sortedYesterday = [...rankings]
+        .filter(r => r.video_id && (r.increase_yesterday || 0) > 0)
+        .sort((a, b) => (a.rank_yesterday || 9999) - (b.rank_yesterday || 9999));
+      if (sortedYesterday.length > 0) {
+        const top = sortedYesterday[0];
+        usedVideoIds.add(top.video_id);
+        slides.push({
+          videoId: top.video_id,
+          category: 'デイリー急上昇ランキング',
+          headline: `「${getTitle(top)}」が昨日増加チャートの1位にランクイン`,
+          subtext: `昨日 +${Number(top.increase_yesterday || 0).toLocaleString()} 回再生 ・ 累計 ${Number(top.total_views || 0).toLocaleString()} 回`,
+          ctaText: 'チャートを見る',
+          ctaHref: 'ranking.html',
+          songHref: `song.html?id=${encodeURIComponent(top.video_id)}`
+        });
+      }
+
+      // スライド2: バズレーダー注目曲
+      const topBuzz = buzzList.find(b => b.video_id && !usedVideoIds.has(b.video_id)) || buzzList[0];
+      if (topBuzz && topBuzz.video_id) {
+        usedVideoIds.add(topBuzz.video_id);
+        slides.push({
+          videoId: topBuzz.video_id,
+          category: `注目曲トラッカー ・ ${topBuzz.buzz_category || 'バズ検知'}`,
+          headline: `「${getTitle(topBuzz)}」が直近24時間で急速に伸長中`,
+          subtext: `24h増加 +${Number(topBuzz.views_inc_24h || 0).toLocaleString()} 回 ・ モメンタム比 ${topBuzz.mr ?? '-'}x`,
+          ctaText: '注目曲を見る',
+          ctaHref: 'featured.html?tab=buzz',
+          songHref: `song.html?id=${encodeURIComponent(topBuzz.video_id)}`
+        });
+      }
+
+      // スライド3: 新曲レーダーピックアップ
+      const topNew = newList.find(n => n.video_id && !usedVideoIds.has(n.video_id)) || newList[0];
+      if (topNew && topNew.video_id) {
+        usedVideoIds.add(topNew.video_id);
+        slides.push({
+          videoId: topNew.video_id,
+          category: `新曲レーダー ・ ${topNew.new_release_category || 'ニューリリース'}`,
+          headline: `新曲「${getTitle(topNew)}」が投稿${topNew.video_age_days || 1}日で大きな注目を集める`,
+          subtext: `累計 ${Number(topNew.current_views || 0).toLocaleString()} 回再生 ・ 高評価率 ${topNew.total_like_rate_pct ?? '-'}%`,
+          ctaText: '新曲一覧を見る',
+          ctaHref: 'featured.html?tab=new',
+          songHref: `song.html?id=${encodeURIComponent(topNew.video_id)}`
+        });
+      }
+
+      // スライド4: まもなく大台突破（マイルストーン予測）
+      const sortedForecast = [...milestoneStatus]
+        .filter(m => m.video_id)
+        .sort((a, b) => (a.sort_minutes || 999999) - (b.sort_minutes || 999999));
+      const nextMilestone = sortedForecast.find(m => !usedVideoIds.has(m.video_id)) || sortedForecast[0];
+      if (nextMilestone && nextMilestone.video_id) {
+        usedVideoIds.add(nextMilestone.video_id);
+        slides.push({
+          videoId: nextMilestone.video_id,
+          category: 'マイルストーントラッカー ・ 大台突破予測',
+          headline: `「${getTitle(nextMilestone)}」がまもなく${nextMilestone.target_label || '大台'}再生を突破`,
+          subtext: `予測残り ${nextMilestone.days_to_reach || 'まもなく'} ・ あと ${Number(nextMilestone.views_remaining || 0).toLocaleString()} 回`,
+          ctaText: '予測を見る',
+          ctaHref: 'milestone.html?tab=forecast',
+          songHref: `song.html?id=${encodeURIComponent(nextMilestone.video_id)}`
+        });
+      }
+
+      // スライド5: 最近の大台達成（アーカイブ）
+      const sortedHistory = [...milestoneHistory]
+        .filter(h => h.video_id)
+        .sort((a, b) => (b.sort_timestamp_num || 0) - (a.sort_timestamp_num || 0));
+      const recentHit = sortedHistory.find(h => !usedVideoIds.has(h.video_id)) || sortedHistory[0];
+      if (recentHit && recentHit.video_id) {
+        slides.push({
+          videoId: recentHit.video_id,
+          category: 'マイルストーントラッカー ・ 大台達成アーカイブ',
+          headline: `「${getTitle(recentHit)}」が${recentHit.milestone_label || '大台'}を達成`,
+          subtext: `達成日 ${recentHit.achieved_date || '直近'} ・ 達成時 ${Number(recentHit.achieved_views || 0).toLocaleString()} 回再生`,
+          ctaText: '達成記録を見る',
+          ctaHref: 'milestone.html?tab=archive',
+          songHref: `song.html?id=${encodeURIComponent(recentHit.video_id)}`
+        });
+      }
+
+      // データ取得前（ローカルプレビュー時など）のフォールバック表示
+      if (slides.length === 0) {
+        slides.push(
+          {
+            videoId: '',
+            category: 'VocaTracker ハイライト',
+            headline: 'ボカロ楽曲の急上昇チャート・大台突破をリアルタイム可視化',
+            subtext: 'YouTube Data API × BigQuery によるデイリー＆時間別アナリティクス',
+            ctaText: 'ランキングを見る',
+            ctaHref: 'ranking.html',
+            songHref: 'ranking.html'
+          },
+          {
+            videoId: '',
+            category: '注目曲トラッカー',
+            headline: 'バズ急上昇曲と投稿14日以内の新曲レーダーをチェック',
+            subtext: 'モメンタム比率と高評価加速度で今アツい楽曲を自動検知',
+            ctaText: '注目曲を見る',
+            ctaHref: 'featured.html',
+            songHref: 'featured.html'
+          },
+          {
+            videoId: '',
+            category: 'マイルストーントラッカー',
+            headline: 'ミリオン・1,000万・1億再生までの予測と達成アーカイブ',
+            subtext: '減衰モデルによる到達時刻カウントダウンと過去実績グラフ',
+            ctaText: 'マイルストーンを見る',
+            ctaHref: 'milestone.html',
+            songHref: 'milestone.html'
+          }
         );
       }
-      const results = await Promise.all(fetchPromises);
-      rawLogs = results.flat();
-      if (rawLogs.length > 0) {
-        renderTrendCarousel(rawLogs);
+
+      spotlightSlides = slides;
+      currentSlideIndex = 0;
+      renderSpotlightSlide(0);
+      startAutoSlide();
+      setupSwipeGesture();
+
+      if (window.lucide) {
+        lucide.createIcons();
       }
-    } catch (err) {
-      console.warn("JSON読み込み失敗:", err);
     }
-    lucide.createIcons();
-  }
 
-    function renderTrendCarousel(rawLogs) {
-      const container = document.getElementById('trendCarouselContainer');
-      if (!container) return;
+    /**
+     * YouTube Music Charts風のコンパクトスポットライトを描画
+     */
+    function renderSpotlightSlide(index) {
+      const slide = spotlightSlides[index];
+      if (!slide) return;
 
-      // 1. 同一video_idのログを最新1件に集約（重複排除）
-      const songMap = {};
-      const producerCountMap = {};
+      const contentEl = document.getElementById('spotlightContent');
+      const ambientEl = document.getElementById('spotlightAmbientBg');
+      const indicatorsEl = document.getElementById('spotlightIndicators');
 
-      rawLogs.forEach(log => {
-        if (!log.video_id) return;
-        const logTime = new Date(log.updated_at || 0).getTime();
-        if (!songMap[log.video_id] || logTime > songMap[log.video_id].latest_time) {
-          songMap[log.video_id] = { ...log, latest_time: logTime };
-        }
-      });
+      const thumbUrl = slide.videoId
+        ? `https://img.youtube.com/vi/${encodeURIComponent(slide.videoId)}/hqdefault.jpg`
+        : 'https://placehold.co/480x360/0f172a/38bdf8?text=VocaTracker';
 
-      const uniqueSongs = Object.values(songMap);
+      if (ambientEl) {
+        ambientEl.style.backgroundImage = `url('${thumbUrl}')`;
+      }
 
-      // カスタムタイトルの読み込み
-      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
-      const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
+      contentEl.innerHTML = `
+        <!-- ジャケット風サムネイル（コンパクトサイズ・タップで楽曲詳細へ） -->
+        <a href="${slide.songHref}" class="relative w-44 h-44 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-2xl overflow-hidden bg-slate-900 border border-white/15 shadow-2xl shrink-0 group slide-fade-in block">
+          <img
+            src="${thumbUrl}"
+            onerror="this.onerror=null;this.src='https://placehold.co/480x360/1e293b/94a3b8?text=VocaTracker';"
+            alt="${escapeHTML(slide.headline)}"
+            class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+          >
+          <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent"></div>
+        </a>
 
-      // Pごとのランクイン件数を集計（ブラッシュアップ機能用）
-      uniqueSongs.forEach(s => {
-        const pName = customProducers[s.video_id] || s.producer || '不明';
-        producerCountMap[pName] = (producerCountMap[pName] || 0) + 1;
-      });
+        <!-- テキスト・CTAエリア -->
+        <div class="w-full flex-1 space-y-2.5 text-left slide-fade-in">
+          <p class="text-xs font-semibold text-slate-300 tracking-wide">${escapeHTML(slide.category)}</p>
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white leading-snug line-clamp-2">
+            <a href="${slide.songHref}" class="hover:text-cyan-300 transition">${escapeHTML(slide.headline)}</a>
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed line-clamp-1">
+            ${escapeHTML(slide.subtext)}
+          </p>
+          <div class="pt-2 flex flex-wrap items-center gap-2.5">
+            <a href="${slide.ctaHref}" class="inline-flex items-center justify-center bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full transition shadow-lg">
+              ${escapeHTML(slide.ctaText)}
+            </a>
+            ${slide.videoId ? `
+              <a href="${slide.songHref}" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/15 font-semibold text-xs px-4 py-2.5 rounded-full transition">
+                楽曲詳細
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `;
 
-      // 毎時増加数（勢い）順にソートし、上位10曲をカルーセル表示
-      const sortedTrending = uniqueSongs.sort((a, b) => (b.hourly_inclease || 0) - (a.hourly_inclease || 0)).slice(0, 10);
-
-      container.innerHTML = sortedTrending.map((s, index) => {
-        const displayTitle = customTitles[s.video_id] || s.title || `動画ID: ${s.video_id}`;
-        const displayProducer = customProducers[s.video_id] || s.producer || 'ボカロP';
-        const thumbUrl = `https://img.youtube.com/vi/${s.video_id}/mqdefault.jpg`;
-        const rank = index + 1;
-
-        // 🌟 YouTube Music Chart風のハイライトバッジ生成（サンプルロジック / 拡張可能）
-        let badgeHtml = '';
-        const pSongCount = producerCountMap[displayProducer] || 1;
-
-        if (rank === 1) {
-          badgeHtml = `<span class="bg-gradient-to-r from-amber-500 to-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">🔥 トレンド1位 (急上昇)</span>`;
-        } else if (pSongCount >= 2) {
-          badgeHtml = `<span class="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-2 py-0.5 rounded">${escapeHTML(displayProducer)} ランクイン ${pSongCount}曲目</span>`;
-        } else if (rank <= 3) {
-          badgeHtml = `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded">TOP3をキープ中</span>`;
-        } else {
-          badgeHtml = `<span class="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0.5 rounded">TOP10ランクイン</span>`;
-        }
-
+      // YouTube Music Charts風インジケーター（アクティブのみ横長ピル）
+      indicatorsEl.innerHTML = spotlightSlides.map((_, i) => {
+        const isActive = i === index;
         return `
-          <a href="song.html?id=${s.video_id}" class="w-72 md:w-80 shrink-0 bg-slate-900 border border-slate-800 hover:border-cyan-500/60 rounded-2xl p-3.5 block transition space-y-3 shadow-lg snap-start group">
-            <!-- サムネイル + 順位バッジ -->
-            <div class="relative aspect-video rounded-xl overflow-hidden bg-slate-800 border border-slate-700/50">
-              <img src="${thumbUrl}" alt="${escapeHTML(displayTitle)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
-              <div class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur text-white text-xs font-black px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1 shadow">
-                <span class="text-cyan-400 font-mono">#${rank}</span>
-              </div>
-              <div class="absolute bottom-2 right-2 bg-emerald-600/90 backdrop-blur text-white text-[11px] font-bold px-2 py-0.5 rounded shadow">
-                +${(s.hourly_inclease || 0).toLocaleString()} /h
-              </div>
-            </div>
-
-            <!-- 曲情報 -->
-            <div class="space-y-1.5">
-              <div class="flex items-center gap-1.5 overflow-hidden">
-                ${badgeHtml}
-              </div>
-              <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition line-clamp-1 leading-snug">${escapeHTML(displayTitle)}</h4>
-              <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
-                <span class="truncate max-w-[140px]">P名: ${escapeHTML(displayProducer)}</span>
-                <span class="font-semibold text-slate-300 shrink-0">${(s.views || 0).toLocaleString()} 回</span>
-              </div>
-            </div>
-          </a>
+          <button
+            onclick="goToSlide(${i})"
+            aria-label="スライド ${i + 1}"
+            class="h-1.5 rounded-full transition-all duration-300 ${isActive ? 'w-8 bg-white' : 'w-1.5 bg-white/30 hover:bg-white/60'}"
+          ></button>
         `;
       }).join('');
     }
 
-    function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
-    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
-    function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
+    function goToSlide(index) {
+      if (spotlightSlides.length === 0) return;
+      currentSlideIndex = (index + spotlightSlides.length) % spotlightSlides.length;
+      renderSpotlightSlide(currentSlideIndex);
+      restartAutoSlide();
+    }
 
-    window.onload = initPortal;
+    function nextSlide() {
+      goToSlide(currentSlideIndex + 1);
+    }
+
+    function prevSlide() {
+      goToSlide(currentSlideIndex - 1);
+    }
+
+    function startAutoSlide() {
+      if (autoSlideTimer) clearInterval(autoSlideTimer);
+      if (spotlightSlides.length <= 1) return;
+      autoSlideTimer = setInterval(() => {
+        currentSlideIndex = (currentSlideIndex + 1) % spotlightSlides.length;
+        renderSpotlightSlide(currentSlideIndex);
+      }, 6500);
+    }
+
+    function restartAutoSlide() {
+      startAutoSlide();
+    }
+
+    /**
+     * スマホでの左右スワイプ操作でスライド切り替え
+     */
+    function setupSwipeGesture() {
+      const area = document.getElementById('spotlightArea');
+      if (!area) return;
+      let startX = 0;
+      let startY = 0;
+
+      area.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+
+      area.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || e.changedTouches.length === 0) return;
+        const diffX = e.changedTouches[0].clientX - startX;
+        const diffY = e.changedTouches[0].clientY - startY;
+        if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX < 0) nextSlide();
+          else prevSlide();
+        }
+      }, { passive: true });
+    }
+
+    // メニュー・モーダル操作
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function openModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) {
+        el.classList.remove('hidden');
+        if (modalId === 'adminLoginModal') {
+          updateAdminModalUI();
+        }
+      }
+    }
+
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.add('hidden');
+    }
+
+    // モーダル背景タップで閉じる
+    ['privacyModal', 'adminLoginModal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          if (e.target === el) closeModal(id);
+        });
+      }
+    });
+
+    // 管理者ログイン・状態表示（song.html の voca_admin_mode と共通連動）
+    function updateAdminModalUI() {
+      const isAdmin = safeGetStorage('voca_admin_mode', 'false') === 'true';
+      const statusText = document.getElementById('adminModalStatusText');
+      const formEl = document.getElementById('adminLoginForm');
+      const actionsEl = document.getElementById('adminLoggedInActions');
+      const footerLabel = document.getElementById('footerAdminLabel');
+      const feedbackEl = document.getElementById('adminLoginFeedback');
+
+      if (feedbackEl) feedbackEl.classList.add('hidden');
+
+      if (isAdmin) {
+        if (statusText) {
+          statusText.innerText = '🔓 管理者モード（ログイン中）';
+          statusText.className = 'font-bold text-cyan-400';
+        }
+        if (formEl) formEl.classList.add('hidden');
+        if (actionsEl) actionsEl.classList.remove('hidden');
+        if (footerLabel) footerLabel.innerText = '管理者メニュー (ログイン中)';
+      } else {
+        if (statusText) {
+          statusText.innerText = '🔒 一般閲覧モード';
+          statusText.className = 'font-bold text-slate-400';
+        }
+        if (formEl) formEl.classList.remove('hidden');
+        if (actionsEl) actionsEl.classList.add('hidden');
+        if (footerLabel) footerLabel.innerText = '管理者ログイン';
+      }
+    }
+
+    function handleAdminLogin(event) {
+      event.preventDefault();
+      const input = document.getElementById('adminPasscodeInput');
+      const feedbackEl = document.getElementById('adminLoginFeedback');
+      const val = (input ? input.value : '').trim();
+
+      // 仮パスコード認証（今後 Firebase Auth 等へ差し替え可能なフック）
+      if (!val) {
+        if (feedbackEl) {
+          feedbackEl.innerText = 'パスコードを入力してください。';
+          feedbackEl.className = 'text-xs px-3 py-2 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30';
+          feedbackEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      safeSetStorage('voca_admin_mode', 'true');
+      if (input) input.value = '';
+      updateAdminModalUI();
+
+      if (feedbackEl) {
+        feedbackEl.innerText = '管理者モードを有効にしました。';
+        feedbackEl.className = 'text-xs px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        feedbackEl.classList.remove('hidden');
+      }
+    }
+
+    function logoutAdmin() {
+      safeSetStorage('voca_admin_mode', 'false');
+      updateAdminModalUI();
+    }
+
+    // 確実に起動
+    function bootApp() {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      initPortal();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootApp);
+    } else {
+      bootApp();
+    }
+  </script>
+
+  <!-- Firebase Analytics（安全に非同期初期化） -->
+  <script type="module">
+    async function initFirebase() {
+      try {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+        const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js");
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+          authDomain: "vocaloid-song-trackar.firebaseapp.com",
+          projectId: "youtube-vocaloid-song-trackar",
+          storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+          messagingSenderId: "543125801305",
+          appId: "1:543125801305:web:7556f46309f798105f6448",
+          measurementId: "G-L6NMKP7QQQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        getAnalytics(app);
+      } catch (e) {
+        console.warn("Firebase初期化スキップ:", e);
+      }
+    }
+    initFirebase();
   </script>
 </body>
 </html>
