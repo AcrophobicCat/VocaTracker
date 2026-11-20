@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>楽曲詳細 - VocaTracker</title>
-  <!-- Content Security Policy (Tailwind CDN / Firebase / Chart.js / Lucide を正しく許可) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://www.gstatic.com https://www.googletagmanager.com https://*.google-analytics.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https://img.youtube.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.googleapis.com https://*.google-analytics.com https://*.analytics.google.com https://*.firebaseio.com;">
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -13,20 +15,25 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            darkbg: '#0f172a',
-            cardbg: '#1e293b'
+    if (window.tailwind) {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif']
+            },
+            colors: {
+              darkbg: '#0f172a',
+              cardbg: '#1e293b'
+            }
           }
         }
-      }
-    };
+      };
+    }
   </script>
   <style>
-    body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
     .app-icon-badge {
       background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
@@ -60,7 +67,7 @@
 
       <!-- スマホ用ハンバーガーボタン -->
       <div class="md:hidden flex items-center">
-        <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-1.5 rounded-lg bg-slate-800/80 border border-slate-700 transition">
+        <button onclick="toggleMobileMenu()" aria-label="メニューを開く" class="text-slate-300 hover:text-white p-2 rounded-lg bg-slate-800/80 border border-slate-700 transition">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
       </div>
@@ -74,26 +81,37 @@
           管理者切替
         </button>
       </div>
+      <div class="pt-1">
+        <a href="index.html" class="inline-block text-xs text-slate-300 hover:text-white bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+          ← 一覧に戻る
+        </a>
+      </div>
     </div>
   </header>
 
   <!-- Main Content -->
   <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-    <!-- 診断・エラー表示バナー（データ取得に失敗した場合のみ表示され、上書きされません） -->
-    <div id="errorBanner" class="hidden bg-rose-950/80 border border-rose-500/60 rounded-2xl p-4 space-y-2 shadow-xl">
+    <!-- 診断・エラー表示バナー（JSエラーやJSON取得失敗時に必ず表示） -->
+    <div id="errorBanner" class="hidden bg-rose-950/90 border border-rose-500/70 rounded-2xl p-4 space-y-2 shadow-xl">
       <div class="flex items-center gap-2 text-rose-300 font-bold text-sm">
         <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
-        <span>楽曲データの読み込みに失敗しました（サンプルデータを表示中）</span>
+        <span id="errorBannerTitle">楽曲データの読み込みに失敗しました</span>
       </div>
-      <p id="errorBannerMessage" class="text-xs text-rose-200 font-mono break-all bg-slate-950/60 p-2.5 rounded-lg border border-rose-900/60"></p>
-      <p id="errorBannerHint" class="text-[11px] text-rose-300/90"></p>
+      <p id="errorBannerMessage" class="text-xs text-rose-200 font-mono break-all bg-slate-950/70 p-2.5 rounded-lg border border-rose-900/60"></p>
+      <p id="errorBannerHint" class="text-[11px] text-rose-300/90 leading-relaxed"></p>
     </div>
 
     <!-- Song Header Card -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row items-center gap-6 shadow-xl">
       <a id="thumbnailLink" href="#" target="_blank" rel="noopener" class="w-full md:w-56 shrink-0 aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700/60 relative group shadow-lg block hover:border-cyan-500 transition">
-        <img id="songThumbnail" src="" alt="サムネイル" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+        <img
+          id="songThumbnail"
+          src="https://placehold.co/480x270/1e293b/94a3b8?text=Loading..."
+          onerror="this.onerror=null;this.src='https://placehold.co/480x270/1e293b/94a3b8?text=No+Thumbnail';"
+          alt="サムネイル"
+          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+        >
         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1">
           <i data-lucide="external-link" class="w-4 h-4"></i> YouTubeで開く
         </div>
@@ -101,7 +119,8 @@
 
       <div class="space-y-3 flex-1 w-full">
         <div class="flex flex-wrap items-center gap-2">
-          <span id="songStatusBadge" class="px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400">楽曲詳細</span>
+          <!-- 読み込みの進行状況もここにリアルタイム表示されます -->
+          <span id="songStatusBadge" class="px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400">起動待機中...</span>
           <span id="videoIdDisplay" class="text-xs text-slate-500 font-mono">ID: ---</span>
         </div>
 
@@ -109,7 +128,7 @@
         <div class="space-y-2">
           <div class="flex items-center gap-3">
             <h1 id="songTitle" class="text-xl md:text-2xl font-extrabold text-white leading-snug">読み込み中...</h1>
-            <button id="editTitleBtn" onclick="enableTitleEdit()" class="hidden bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs px-3 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 shrink-0">
+            <button id="editTitleBtn" onclick="enableTitleEdit()" class="hidden bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 shrink-0">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
             </button>
           </div>
@@ -124,7 +143,7 @@
         <div class="space-y-1">
           <div class="flex items-center gap-2 flex-wrap">
             <p class="text-sm text-cyan-400 font-medium">ボカロP: <span id="songProducer" class="underline">---</span></p>
-            <button id="editProducerBtn" onclick="enableProducerEdit()" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">編集</button>
+            <button id="editProducerBtn" onclick="enableProducerEdit()" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-1 rounded border border-slate-700 transition">編集</button>
           </div>
           <div id="editProducerContainer" class="hidden flex gap-2 max-w-xs pt-1">
             <input type="text" id="editProducerInput" class="bg-slate-800 border border-cyan-500 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none w-full">
@@ -133,15 +152,16 @@
           </div>
         </div>
 
-        <div class="pt-1">
+        <div class="pt-1 flex flex-wrap items-center gap-3">
           <a id="youtubeLink" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium py-2 px-3.5 rounded-lg transition shadow">
             <i data-lucide="youtube" class="w-3.5 h-3.5"></i> YouTubeで視聴
           </a>
+          <span id="publishedAtDisplay" class="text-xs text-slate-400 hidden"></span>
         </div>
       </div>
     </div>
 
-    <!-- 🏷️ タグ管理セクション -->
+    <!-- タグ管理セクション -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
         <i data-lucide="tag" class="w-4 h-4 text-cyan-400"></i> タグ情報
@@ -155,9 +175,9 @@
             <div id="vocalTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
           </div>
           <div id="vocalEditContainer" class="hidden flex items-center gap-1.5 pl-0 sm:pl-24">
-            <input type="text" id="newVocalTagInput" list="vocalMasterList" placeholder="ボーカルを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-purple-500 max-w-xs w-full">
+            <input type="text" id="newVocalTagInput" list="vocalMasterList" placeholder="ボーカルを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 max-w-xs w-full">
             <datalist id="vocalMasterList"></datalist>
-            <button onclick="addTag('vocal')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
+            <button onclick="addTag('vocal')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
 
@@ -168,9 +188,9 @@
             <div id="creditTagsContainer" class="flex items-center gap-1.5 flex-wrap"></div>
           </div>
           <div id="creditEditContainer" class="hidden flex items-center gap-1.5 pl-0 sm:pl-24">
-            <input type="text" id="newCreditTagInput" list="creditMasterList" placeholder="クレジットを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 max-w-xs w-full">
+            <input type="text" id="newCreditTagInput" list="creditMasterList" placeholder="クレジットを追加..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 max-w-xs w-full">
             <datalist id="creditMasterList"></datalist>
-            <button onclick="addTag('credit')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
+            <button onclick="addTag('credit')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
 
@@ -181,9 +201,9 @@
             <div id="freeTagsContainer" class="flex items-center gap-1.5 flex-wrap flex-1"></div>
           </div>
           <div class="flex items-center gap-1.5 pl-0 sm:pl-24">
-            <input type="text" id="newFreeTagInput" list="freeMasterList" placeholder="タグを追加 (候補が出ます)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 max-w-xs w-full">
+            <input type="text" id="newFreeTagInput" list="freeMasterList" placeholder="タグを追加 (候補が出ます)..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500 max-w-xs w-full">
             <datalist id="freeMasterList"></datalist>
-            <button onclick="addTag('free')" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1 rounded-lg font-medium transition whitespace-nowrap">追加</button>
+            <button onclick="addTag('free')" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition whitespace-nowrap">追加</button>
           </div>
         </div>
       </div>
@@ -217,7 +237,7 @@
         <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
           <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i> 累計再生数の推移
         </h3>
-        <div class="h-64 w-full">
+        <div class="h-64 w-full relative">
           <canvas id="viewsChart"></canvas>
         </div>
       </div>
@@ -229,7 +249,7 @@
           </h3>
           <span class="text-[10px] text-slate-400">※バーをクリックして絞り込み</span>
         </div>
-        <div class="h-60 w-full">
+        <div class="h-60 w-full relative">
           <canvas id="dailyBarChart"></canvas>
         </div>
       </div>
@@ -259,7 +279,9 @@
             </tr>
           </thead>
           <tbody id="logTableBody" class="divide-y divide-slate-800">
-            <!-- JavaScriptで動的に挿入されます -->
+            <tr>
+              <td colspan="4" class="p-4 text-center text-slate-500">データを読み込み中...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -267,43 +289,95 @@
 
   </main>
 
-  <!-- Firebase Initialization Script -->
-  <script type="module">
-    try {
-      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
-      const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js");
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
-        authDomain: "vocaloid-song-trackar.firebaseapp.com",
-        projectId: "youtube-vocaloid-song-trackar",
-        storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
-        messagingSenderId: "543125801305",
-        appId: "1:543125801305:web:7556f46309f798105f6448",
-        measurementId: "G-L6NMKP7QQQ"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      getAnalytics(app);
-    } catch (e) {
-      // Firebase読み込み失敗時もメイン処理に影響させない
-      console.warn("Firebase初期化スキップ:", e);
-    }
-  </script>
-
   <!-- Application Logic Script -->
   <script>
+    // 予期せぬエラーもiPhone画面上に必ず表示するためのグローバルハンドラ
+    function showErrorBanner(message, hint = '', title = '楽曲データの読み込みに失敗しました') {
+      const banner = document.getElementById('errorBanner');
+      const titleEl = document.getElementById('errorBannerTitle');
+      const msgEl = document.getElementById('errorBannerMessage');
+      const hintEl = document.getElementById('errorBannerHint');
+      if (banner && msgEl) {
+        if (titleEl) titleEl.innerText = title;
+        msgEl.innerText = message;
+        if (hintEl) hintEl.innerText = hint;
+        banner.classList.remove('hidden');
+      }
+    }
+
+    function setStatusBadge(text, isError = false) {
+      const badge = document.getElementById('songStatusBadge');
+      if (!badge) return;
+      badge.innerText = text;
+      badge.className = isError
+        ? 'px-2.5 py-1 rounded text-xs font-bold bg-rose-500/20 text-rose-400'
+        : 'px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400';
+    }
+
+    window.addEventListener('error', (event) => {
+      showErrorBanner(
+        `JSエラー: ${event.message} (${event.lineno}行目)`,
+        '画面を再読み込みしても直らない場合は、このエラーメッセージをお知らせください。',
+        'スクリプト実行エラー'
+      );
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+      const reason = event.reason ? (event.reason.message || String(event.reason)) : '不明な非同期エラー';
+      showErrorBanner(
+        `非同期エラー: ${reason}`,
+        '通信状態またはJSONファイル形式に問題がある可能性があります。',
+        '非同期処理エラー'
+      );
+    });
+
+    // 安全な localStorage ヘルパー（プライベートモードや破損JSONでのクラッシュを防止）
+    function safeGetStorage(key, fallback = null) {
+      try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn('localStorage保存スキップ:', e);
+      }
+    }
+
+    function safeGetJSON(key, fallback = {}) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return parsed !== null ? parsed : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetJSON(key, obj) {
+      try {
+        localStorage.setItem(key, JSON.stringify(obj));
+      } catch (e) {
+        console.warn('localStorage JSON保存スキップ:', e);
+      }
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = (urlParams.get('id') || '').trim();
 
-    // グローバル状態（initSongPage内で再宣言しない）
     let allLogsForSong = [];
     let viewsChartInstance = null;
     let dailyBarChartInstance = null;
-    let isAdminMode = localStorage.getItem('voca_admin_mode') === 'true';
+    let isAdminMode = safeGetStorage('voca_admin_mode', 'false') === 'true';
 
     /**
-     * HTML特殊文字をエスケープするユーティリティ
+     * HTML特殊文字をエスケープする
      */
     function escapeHTML(str) {
       if (str === null || str === undefined) return '';
@@ -317,28 +391,13 @@
     }
 
     /**
-     * エラー診断バナーを表示する（iPhone等のコンソールが見られない環境向け）
-     */
-    function showErrorBanner(message, hint = '') {
-      const banner = document.getElementById('errorBanner');
-      const msgEl = document.getElementById('errorBannerMessage');
-      const hintEl = document.getElementById('errorBannerHint');
-      if (banner && msgEl) {
-        msgEl.innerText = message;
-        if (hintEl) hintEl.innerText = hint;
-        banner.classList.remove('hidden');
-      }
-    }
-
-    /**
-     * Safari（iPhone）でも安全に日付文字列を Date オブジェクトへ変換する関数
-     * BigQueryの "YYYY-MM-DD HH:MM:SS UTC" や "YYYY-MM-DD HH:MM:SS+00:00" に対応
+     * iPhone Safari でも安全に日時文字列を Date に変換する
+     * BigQueryの ISO8601 / "YYYY-MM-DD HH:MM:SS UTC" 等に対応
      */
     function parseSafeDate(rawDate) {
       if (!rawDate) return new Date(NaN);
       if (rawDate instanceof Date) return rawDate;
 
-      // Unixタイムスタンプ（数値または数字のみの文字列）
       if (typeof rawDate === 'number' || /^\d+(\.\d+)?$/.test(String(rawDate).trim())) {
         let num = Number(rawDate);
         if (num < 10000000000) num *= 1000;
@@ -346,12 +405,9 @@
       }
 
       let str = String(rawDate).trim();
-
-      // BigQuery形式: "2026-11-19 09:00:25 UTC" -> "2026-11-19T09:00:25Z"
       if (str.endsWith(' UTC')) {
         str = str.replace(' ', 'T').replace(' UTC', 'Z');
       } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(str)) {
-        // タイムゾーンオフセット(+00:00 等)があれば T 区切り、なければスラッシュ区切りに変換
         if (/[+-]\d{2}:?\d{2}$|Z$/i.test(str)) {
           str = str.replace(/\s+/, 'T');
         } else {
@@ -363,14 +419,12 @@
     }
 
     /**
-     * 日付を "YYYY/MM/DD HH:MM:SS" 形式へ整形
+     * 日時を "YYYY/MM/DD HH:MM:SS" 形式に整形
      */
     function formatDateTime(rawDate) {
       if (!rawDate) return '---';
       const d = parseSafeDate(rawDate);
-      if (isNaN(d.getTime())) {
-        return String(rawDate);
-      }
+      if (isNaN(d.getTime())) return String(rawDate);
 
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -378,12 +432,11 @@
       const hh = String(d.getHours()).padStart(2, '0');
       const min = String(d.getMinutes()).padStart(2, '0');
       const ss = String(d.getSeconds()).padStart(2, '0');
-
       return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
     }
 
     /**
-     * 0:30基準（30分シフト）の日付文字列を取得
+     * 0:30基準（30分シフト）の日付文字列を返す
      */
     function getShiftedDayStr(dateStr) {
       const d = parseSafeDate(dateStr);
@@ -396,7 +449,7 @@
     }
 
     /**
-     * video_idから0〜49のグループ番号を割り出す関数（Python側と一致させること）
+     * video_id から 0〜49 のグループ番号を計算（export.py と完全一致）
      */
     function getGroupIndex(vid, totalGroups = 50) {
       let hash = 0;
@@ -408,7 +461,7 @@
     }
 
     /**
-     * ログ1件のカラム名の揺れを吸収し、数値を正規化する
+     * ログ1件のデータを正規化
      */
     function normalizeLogRow(log) {
       const viewsVal = log.views ?? log.view_count ?? 0;
@@ -428,41 +481,48 @@
     }
 
     /**
-     * ページ初期化処理
+     * メイン初期化処理
      */
     async function initSongPage() {
+      setStatusBadge('ステップ1: ID確認中...');
+      updateAdminUI();
+
       if (!videoId) {
+        setStatusBadge('ID未指定', true);
         document.getElementById('songTitle').innerText = '楽曲IDが指定されていません。';
-        showErrorBanner('URLに ?id=動画ID が指定されていません。', '例: song.html?id=XXXXXXXXXXX の形式でアクセスしてください。');
+        showErrorBanner(
+          `現在のURL: ${window.location.href}`,
+          'URLの末尾に ?id=動画ID （例: song.html?id=XXXXXXXXXXX）を付けてアクセスしてください。',
+          'URLパラメータ不足'
+        );
         return;
       }
 
-      updateAdminUI();
-
-      // サムネイル・基本リンクはデータ取得を待たずに即座に反映
-      const thumbnailUrl = `https://img.youtube.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
+      // サムネイル・リンクを即座に反映
+      const encodedId = encodeURIComponent(videoId);
+      const thumbnailUrl = `https://img.youtube.com/vi/${encodedId}/hqdefault.jpg`;
       document.getElementById('songThumbnail').src = thumbnailUrl;
-      document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+      document.getElementById('thumbnailLink').href = `https://www.youtube.com/watch?v=${encodedId}`;
       document.getElementById('videoIdDisplay').innerText = `ID: ${videoId}`;
-      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+      document.getElementById('youtubeLink').href = `https://www.youtube.com/watch?v=${encodedId}`;
 
-      // グローバル変数をリセット（ここで let を付けない！）
+      const groupIdx = getGroupIndex(videoId, 50);
+      const targetUrl = new URL(`logs/song_group_${groupIdx}.json`, window.location.href).href;
+
+      setStatusBadge(`ステップ2: グループ${groupIdx}取得中...`);
       allLogsForSong = [];
       let isFallbackSample = false;
 
       try {
-        const groupIdx = getGroupIndex(videoId, 50);
-        // キャッシュによる古い404・古いJSONの掴み続けを防止
-        const targetPath = `./logs/song_group_${groupIdx}.json`;
-        const res = await fetch(`${targetPath}?t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`${targetUrl}?t=${Date.now()}`, { cache: 'no-store' });
 
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status} (${targetPath} が見つかりません)`);
+          throw new Error(`HTTP ${res.status} - 取得先URL: ${targetUrl}`);
         }
 
+        setStatusBadge(`ステップ3: JSON解析中...`);
         const groupData = await res.json();
 
-        // JSONの構造が「辞書 { videoId: [...] }」でも「配列 [ { video_id: ... } ]」でも対応
         let extractedLogs = [];
         if (Array.isArray(groupData)) {
           extractedLogs = groupData.filter(row => row && (row.video_id === videoId || row.id === videoId));
@@ -471,13 +531,12 @@
         }
 
         if (!Array.isArray(extractedLogs) || extractedLogs.length === 0) {
-          const sampleKeys = Array.isArray(groupData)
-            ? `配列形式 (要素数: ${groupData.length})`
-            : `辞書形式 (キー数: ${Object.keys(groupData || {}).length}, 例: ${Object.keys(groupData || {}).slice(0, 3).join(', ')})`;
-          throw new Error(`グループ${groupIdx} (${targetPath}) に ID "${videoId}" が存在しません。JSON構造: ${sampleKeys}`);
+          const keysPreview = Array.isArray(groupData)
+            ? `配列 (${groupData.length}件)`
+            : `辞書 (${Object.keys(groupData || {}).length}曲, 先頭ID例: ${Object.keys(groupData || {}).slice(0, 3).join(', ')})`;
+          throw new Error(`song_group_${groupIdx}.json 内に ID "${videoId}" が見つかりません (${keysPreview})`);
         }
 
-        // 日時正規化＆新しい順にソート
         allLogsForSong = extractedLogs
           .map(normalizeLogRow)
           .sort((a, b) => b._timestamp - a._timestamp);
@@ -487,30 +546,37 @@
         isFallbackSample = true;
         showErrorBanner(
           e.message,
-          'Python側(export.py)のグループ番号計算(get_group_index)・出力フォルダ(logs/)・JSON形式が一致しているか確認してください。'
+          `計算されたグループ番号: ${groupIdx} / 参照URL: ${targetUrl}。404の場合はGitHub Pagesのデプロイ反映状況や logs/ フォルダ内のファイル有無を確認してください。`
         );
         allLogsForSong = getSampleLogs(videoId).map(normalizeLogRow);
       }
 
       const latest = allLogsForSong[0];
 
-      // タイトルとボカロPの反映
-      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
-      const displayTitle = customTitles[videoId] || latest.title || `動画ID: ${videoId}`;
+      // タイトル（export.py の title / display_title 両対応）
+      const customTitles = safeGetJSON('voca_custom_titles', {});
+      const displayTitle = customTitles[videoId] || latest.title || latest.display_title || `動画ID: ${videoId}`;
       document.getElementById('songTitle').innerText = displayTitle;
 
-      const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
-      const displayProducer = customProducers[videoId] || latest.producer || latest.channel_title || '不明なP';
+      // ボカロP
+      const customProducers = safeGetJSON('voca_custom_producers', {});
+      const displayProducer = customProducers[videoId] || latest.producer || latest.channel_title || '未設定（管理者モードで編集可）';
       document.getElementById('songProducer').innerText = displayProducer;
 
-      // バッジのステータス更新
-      const statusBadge = document.getElementById('songStatusBadge');
+      // 投稿日時があれば表示
+      if (latest.published_at) {
+        const pubEl = document.getElementById('publishedAtDisplay');
+        if (pubEl) {
+          pubEl.innerText = `投稿日時: ${formatDateTime(latest.published_at)}`;
+          pubEl.classList.remove('hidden');
+        }
+      }
+
+      // ステータスバッジ確定
       if (isFallbackSample) {
-        statusBadge.innerText = 'サンプル表示中';
-        statusBadge.className = 'px-2.5 py-1 rounded text-xs font-bold bg-rose-500/20 text-rose-400';
+        setStatusBadge(`サンプル表示 (G:${groupIdx})`, true);
       } else {
-        statusBadge.innerText = `楽曲詳細 (${allLogsForSong.length}件のログ)`;
-        statusBadge.className = 'px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-400';
+        setStatusBadge(`楽曲詳細 (${allLogsForSong.length}件 / G:${groupIdx})`, false);
       }
 
       // KPIカード更新
@@ -521,7 +587,7 @@
       renderTags();
       updateTagSuggestions();
 
-      // グラフ描画用データの作成（古い順）
+      // グラフ描画（古い順）
       const chronologicalLogs = [...allLogsForSong].reverse();
       const labels = chronologicalLogs.map(l => l.updated_at);
       const viewValues = chronologicalLogs.map(l => l.views);
@@ -532,11 +598,9 @@
         if (!dailyMap[dayStr]) dailyMap[dayStr] = 0;
         dailyMap[dayStr] += l.hourly_inclease;
       });
-      const dailyLabels = Object.keys(dailyMap);
-      const dailyValues = Object.values(dailyMap);
 
       renderViewsChart(labels, viewValues);
-      renderDailyBarChart(dailyLabels, dailyValues, chronologicalLogs);
+      renderDailyBarChart(Object.keys(dailyMap), Object.values(dailyMap), chronologicalLogs);
       renderLogTable(allLogsForSong);
 
       if (window.lucide) {
@@ -546,11 +610,11 @@
 
     function toggleMobileMenu() {
       const menu = document.getElementById('mobileMenu');
-      menu.classList.toggle('hidden');
+      if (menu) menu.classList.toggle('hidden');
     }
 
     function getSongTags() {
-      const allTags = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
+      const allTags = safeGetJSON('voca_song_tags', {});
       return allTags[videoId] || {
         vocal: ['初音ミク'],
         credit: ['Music: サンプルP'],
@@ -559,9 +623,9 @@
     }
 
     function saveSongTags(tagsObj) {
-      const allTags = JSON.parse(localStorage.getItem('voca_song_tags')) || {};
+      const allTags = safeGetJSON('voca_song_tags', {});
       allTags[videoId] = tagsObj;
-      localStorage.setItem('voca_song_tags', JSON.stringify(allTags));
+      safeSetJSON('voca_song_tags', allTags);
 
       updateMasterList('voca_master_vocal_tags', tagsObj.vocal, ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', '重音テト']);
       updateMasterList('voca_master_credit_tags', tagsObj.credit, ['Music: サンプルP', 'Illustration: ゲスト', 'Mix: エンジニア']);
@@ -572,18 +636,19 @@
     }
 
     function updateMasterList(storageKey, currentValues, defaults) {
-      let master = JSON.parse(localStorage.getItem(storageKey)) || defaults;
+      let master = safeGetJSON(storageKey, defaults);
+      if (!Array.isArray(master)) master = [...defaults];
       currentValues.forEach(t => {
         if (!master.includes(t)) master.push(t);
       });
-      localStorage.setItem(storageKey, JSON.stringify(master));
+      safeSetJSON(storageKey, master);
     }
 
     function renderTags() {
       const tags = getSongTags();
 
       const buildBadges = (list, type, colorClasses, emptyText) => {
-        if (!list || list.length === 0) {
+        if (!Array.isArray(list) || list.length === 0) {
           return `<span class="text-xs text-slate-500">${emptyText}</span>`;
         }
         return list.map((t, idx) => {
@@ -606,19 +671,18 @@
     }
 
     function updateTagSuggestions() {
-      const masterVocal = JSON.parse(localStorage.getItem('voca_master_vocal_tags')) || ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', '重音テト'];
-      document.getElementById('vocalMasterList').innerHTML = masterVocal.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
+      const masterVocal = safeGetJSON('voca_master_vocal_tags', ['初音ミク', '鏡音リン', '鏡音レン', 'GUMI', '重音テト']);
+      document.getElementById('vocalMasterList').innerHTML = (Array.isArray(masterVocal) ? masterVocal : []).map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
 
-      const masterCredit = JSON.parse(localStorage.getItem('voca_master_credit_tags')) || ['Music: サンプルP', 'Illustration: ゲスト'];
-      document.getElementById('creditMasterList').innerHTML = masterCredit.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
+      const masterCredit = safeGetJSON('voca_master_credit_tags', ['Music: サンプルP', 'Illustration: ゲスト']);
+      document.getElementById('creditMasterList').innerHTML = (Array.isArray(masterCredit) ? masterCredit : []).map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
 
-      const masterFree = JSON.parse(localStorage.getItem('voca_master_free_tags')) || ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM'];
-      document.getElementById('freeMasterList').innerHTML = masterFree.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
+      const masterFree = safeGetJSON('voca_master_free_tags', ['ボカロ曲', '新曲', 'ミリオン達成', '神曲', 'EDM']);
+      document.getElementById('freeMasterList').innerHTML = (Array.isArray(masterFree) ? masterFree : []).map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
     }
 
     function addTag(type) {
       if ((type === 'vocal' || type === 'credit') && !isAdminMode) return;
-
       const inputId = type === 'vocal' ? 'newVocalTagInput' : (type === 'credit' ? 'newCreditTagInput' : 'newFreeTagInput');
       const input = document.getElementById(inputId);
       const val = input.value.trim();
@@ -656,16 +720,16 @@
     function saveCustomProducer() {
       const newProducer = document.getElementById('editProducerInput').value.trim();
       if (!newProducer) return;
-      const customProducers = JSON.parse(localStorage.getItem('voca_custom_producers')) || {};
+      const customProducers = safeGetJSON('voca_custom_producers', {});
       customProducers[videoId] = newProducer;
-      localStorage.setItem('voca_custom_producers', JSON.stringify(customProducers));
+      safeSetJSON('voca_custom_producers', customProducers);
       document.getElementById('songProducer').innerText = newProducer;
       cancelProducerEdit();
     }
 
     function toggleAdminMode() {
       isAdminMode = !isAdminMode;
-      localStorage.setItem('voca_admin_mode', isAdminMode);
+      safeSetStorage('voca_admin_mode', String(isAdminMode));
       updateAdminUI();
       renderTags();
     }
@@ -721,16 +785,18 @@
     function saveCustomTitle() {
       const newTitle = document.getElementById('editTitleInput').value.trim();
       if (!newTitle) return;
-      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+      const customTitles = safeGetJSON('voca_custom_titles', {});
       customTitles[videoId] = newTitle;
-      localStorage.setItem('voca_custom_titles', JSON.stringify(customTitles));
+      safeSetJSON('voca_custom_titles', customTitles);
       document.getElementById('songTitle').innerText = newTitle;
       cancelTitleEdit();
     }
 
     function renderViewsChart(labels, data) {
       if (typeof Chart === 'undefined') return;
-      const ctx = document.getElementById('viewsChart').getContext('2d');
+      const canvas = document.getElementById('viewsChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
       if (viewsChartInstance) viewsChartInstance.destroy();
 
       viewsChartInstance = new Chart(ctx, {
@@ -760,7 +826,9 @@
 
     function renderDailyBarChart(labels, data, chronologicalLogs) {
       if (typeof Chart === 'undefined') return;
-      const ctx = document.getElementById('dailyBarChart').getContext('2d');
+      const canvas = document.getElementById('dailyBarChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
       if (dailyBarChartInstance) dailyBarChartInstance.destroy();
 
       dailyBarChartInstance = new Chart(ctx, {
@@ -839,12 +907,45 @@
       ];
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initSongPage();
+    // DOMの準備状態にかかわらず確実に1回だけ起動する
+    function bootApp() {
       if (window.lucide) {
         lucide.createIcons();
       }
-    });
+      initSongPage();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootApp);
+    } else {
+      bootApp();
+    }
+  </script>
+
+  <!-- Firebase Initialization Script (トップレベルawaitを使わない安全実装) -->
+  <script type="module">
+    async function initFirebase() {
+      try {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+        const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js");
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+          authDomain: "vocaloid-song-trackar.firebaseapp.com",
+          projectId: "youtube-vocaloid-song-trackar",
+          storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+          messagingSenderId: "543125801305",
+          appId: "1:543125801305:web:7556f46309f798105f6448",
+          measurementId: "G-L6NMKP7QQQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        getAnalytics(app);
+      } catch (e) {
+        console.warn("Firebase初期化スキップ:", e);
+      }
+    }
+    initFirebase();
   </script>
 </body>
 </html>
