@@ -257,8 +257,8 @@
 
     <!-- Historical Data Table -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div class="flex flex-wrap items-center gap-2">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <i data-lucide="table" class="w-4 h-4 text-purple-400"></i> 時間ごとの推移表 (過去30日分)
           </h3>
@@ -268,14 +268,15 @@
           フィルター解除（全表示）
         </button>
       </div>
-      <div class="overflow-x-auto max-h-96">
+      <div class="overflow-x-auto max-h-96 rounded-xl border border-slate-800/80">
         <table class="w-full text-left text-xs text-slate-300">
-          <thead class="bg-slate-800/60 text-slate-400 uppercase sticky top-0">
+          <!-- 不透明背景 + z-10 にしてスクロール時の文字重なりを防止 -->
+          <thead class="bg-slate-800 text-slate-300 uppercase sticky top-0 z-10 shadow-sm">
             <tr>
-              <th class="p-3">確認日時 (updated_at)</th>
-              <th class="p-3 text-right">再生数 (views)</th>
-              <th class="p-3 text-right">増加分 (hourly_inclease)</th>
-              <th class="p-3 text-right">高評価数 (like_count)</th>
+              <th class="p-3 whitespace-nowrap">確認日時 (updated_at)</th>
+              <th class="p-3 text-right whitespace-nowrap">再生数 (views)</th>
+              <th class="p-3 text-right whitespace-nowrap">増加分 (hourly_inclease)</th>
+              <th class="p-3 text-right whitespace-nowrap">高評価数 (like_count)</th>
             </tr>
           </thead>
           <tbody id="logTableBody" class="divide-y divide-slate-800">
@@ -391,8 +392,8 @@
     }
 
     /**
-     * iPhone Safari でも安全に日時文字列を Date に変換する
-     * BigQueryの ISO8601 / "YYYY-MM-DD HH:MM:SS UTC" 等に対応
+     * BigQuery側でJSTの時刻がUTC表記（+00:00 / Z / UTC）として保存されているため、
+     * タイムゾーン記号を無視して年月日・時分秒をそのまま日本時間 (+09:00) として解釈する
      */
     function parseSafeDate(rawDate) {
       if (!rawDate) return new Date(NaN);
@@ -404,48 +405,63 @@
         return new Date(num);
       }
 
-      let str = String(rawDate).trim();
-      if (str.endsWith(' UTC')) {
-        str = str.replace(' ', 'T').replace(' UTC', 'Z');
-      } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(str)) {
-        if (/[+-]\d{2}:?\d{2}$|Z$/i.test(str)) {
-          str = str.replace(/\s+/, 'T');
-        } else {
-          str = str.replace(/-/g, '/');
-        }
+      const str = String(rawDate).trim();
+      const match = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (match) {
+        const [, y, m, d, hh = '00', mm = '00', ss = '00'] = match;
+        const pad = (v) => String(v).padStart(2, '0');
+        return new Date(`${y}-${pad(m)}-${pad(d)}T${pad(hh)}:${pad(mm)}:${pad(ss)}+09:00`);
       }
 
       return new Date(str);
     }
 
     /**
-     * 日時を "YYYY/MM/DD HH:MM:SS" 形式に整形
+     * 日本時間 (JST) の各パーツを安全に取り出すヘルパー
+     */
+    function getJstDateParts(dateObj) {
+      const parts = new Intl.DateTimeFormat('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).formatToParts(dateObj);
+      const getPart = (type) => (parts.find(p => p.type === type) || {}).value || '00';
+      return {
+        yyyy: getPart('year'),
+        mm: getPart('month'),
+        dd: getPart('day'),
+        hh: getPart('hour'),
+        min: getPart('minute'),
+        ss: getPart('second')
+      };
+    }
+
+    /**
+     * 日時を日本時間 "YYYY/MM/DD HH:MM:SS" 形式に整形
      */
     function formatDateTime(rawDate) {
       if (!rawDate) return '---';
       const d = parseSafeDate(rawDate);
       if (isNaN(d.getTime())) return String(rawDate);
 
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const hh = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      const ss = String(d.getSeconds()).padStart(2, '0');
-      return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
+      const p = getJstDateParts(d);
+      return `${p.yyyy}/${p.mm}/${p.dd} ${p.hh}:${p.min}:${p.ss}`;
     }
 
     /**
-     * 0:30基準（30分シフト）の日付文字列を返す
+     * 0:30基準（30分シフト）の日本時間日付文字列 "YYYY/MM/DD" を返す
      */
     function getShiftedDayStr(dateStr) {
       const d = parseSafeDate(dateStr);
       if (isNaN(d.getTime())) return '日付不明';
       const shifted = new Date(d.getTime() - 30 * 60 * 1000);
-      const yyyy = shifted.getFullYear();
-      const mm = String(shifted.getMonth() + 1).padStart(2, '0');
-      const dd = String(shifted.getDate()).padStart(2, '0');
-      return `${yyyy}/${mm}/${dd}`;
+      const p = getJstDateParts(shifted);
+      return `${p.yyyy}/${p.mm}/${p.dd}`;
     }
 
     /**
@@ -478,6 +494,20 @@
         updated_at: formatDateTime(rawTime),
         _timestamp: isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime()
       };
+    }
+
+    /**
+     * 同一確認日時 (updated_at) の重複行をフロント側でも念のため除外
+     */
+    function deduplicateLogs(logs) {
+      const seen = new Map();
+      for (const row of logs) {
+        const key = row.updated_at;
+        if (!seen.has(key) || row.views > seen.get(key).views) {
+          seen.set(key, row);
+        }
+      }
+      return Array.from(seen.values()).sort((a, b) => b._timestamp - a._timestamp);
     }
 
     /**
@@ -537,9 +567,7 @@
           throw new Error(`song_group_${groupIdx}.json 内に ID "${videoId}" が見つかりません (${keysPreview})`);
         }
 
-        allLogsForSong = extractedLogs
-          .map(normalizeLogRow)
-          .sort((a, b) => b._timestamp - a._timestamp);
+        allLogsForSong = deduplicateLogs(extractedLogs.map(normalizeLogRow));
 
       } catch (e) {
         console.error('楽曲データ取得エラー:', e);
@@ -893,10 +921,10 @@
       }
       tbody.innerHTML = logs.map(log => `
         <tr class="hover:bg-slate-800/40 transition">
-          <td class="p-3 text-slate-400">${escapeHTML(log.updated_at)}</td>
-          <td class="p-3 text-right font-medium text-slate-200">${(log.views || 0).toLocaleString()}</td>
-          <td class="p-3 text-right text-cyan-400">+${(log.hourly_inclease || 0).toLocaleString()}</td>
-          <td class="p-3 text-right text-slate-300">${(log.like_count || 0).toLocaleString()}</td>
+          <td class="p-3 text-slate-400 whitespace-nowrap">${escapeHTML(log.updated_at)}</td>
+          <td class="p-3 text-right font-medium text-slate-200 whitespace-nowrap">${(log.views || 0).toLocaleString()}</td>
+          <td class="p-3 text-right text-cyan-400 whitespace-nowrap">+${(log.hourly_inclease || 0).toLocaleString()}</td>
+          <td class="p-3 text-right text-slate-300 whitespace-nowrap">${(log.like_count || 0).toLocaleString()}</td>
         </tr>
       `).join('');
     }
