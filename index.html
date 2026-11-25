@@ -276,7 +276,7 @@
             </div>
             <h4 class="font-bold text-lg text-white group-hover:text-purple-400 transition">マイルストーントラッカー</h4>
             <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              ミリオン・1,000万・1億再生までの到達予測カウントダウンと、過去の大台達成アーカイブを1画面で切り替え。
+              ミリオン・1,000万・1億再生までの到達予測時刻と、過去の大台達成アーカイブを1画面で切り替え。
             </p>
             <div class="flex flex-wrap gap-1.5 mt-3">
               <span class="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">大台突破予測</span>
@@ -430,13 +430,16 @@
       }[tag] || tag));
     }
 
+    // BigQuery側でJSTの時刻がUTC表記として保存されているため、
+    // 元のタイムゾーン記号を無視してそのまま日本時間 (+09:00) として安全に解釈する
     function parseSafeDate(rawDate) {
       if (!rawDate) return new Date(NaN);
-      let str = String(rawDate).trim();
-      if (str.endsWith(' UTC')) {
-        str = str.replace(' ', 'T').replace(' UTC', 'Z');
-      } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(str)) {
-        str = /[+-]\d{2}:?\d{2}$|Z$/i.test(str) ? str.replace(/\s+/, 'T') : str.replace(/-/g, '/');
+      const str = String(rawDate).trim();
+      const match = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (match) {
+        const [, y, m, d, hh = '00', mm = '00', ss = '00'] = match;
+        const pad = (v) => String(v).padStart(2, '0');
+        return new Date(`${y}-${pad(m)}-${pad(d)}T${pad(hh)}:${pad(mm)}:${pad(ss)}+09:00`);
       }
       return new Date(str);
     }
@@ -444,11 +447,52 @@
     function formatShortDate(rawDate) {
       const d = parseSafeDate(rawDate);
       if (isNaN(d.getTime())) return '';
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const hh = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      return `${d.getFullYear()}/${mm}/${dd} ${hh}:${min}`;
+      const parts = new Intl.DateTimeFormat('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(d);
+      const getPart = (type) => (parts.find(p => p.type === type) || {}).value || '';
+      return `${getPart('year')}/${getPart('month')}/${getPart('day')} ${getPart('hour')}:${getPart('minute')}`;
+    }
+
+    /**
+     * 到達予測時刻 (estimated_achieved_at) を日本時間 (JST) で見やすく整形
+     * 日次バッチ運用のため、すでに現在時刻を過ぎている場合も自然に案内する
+     */
+    function formatEstimatedAchievedAt(rawDate) {
+      const d = parseSafeDate(rawDate);
+      if (isNaN(d.getTime())) {
+        return { label: '到達予測 算出中', isPast: false };
+      }
+
+      const parts = new Intl.DateTimeFormat('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(d);
+
+      const getPart = (type) => (parts.find(p => p.type === type) || {}).value || '';
+      const formattedTime = `${getPart('month')}/${getPart('day')} ${getPart('hour')}:${getPart('minute')}頃`;
+
+      if (d.getTime() <= Date.now()) {
+        return {
+          label: `${formattedTime} 到達見込み（次回更新待ち）`,
+          isPast: true
+        };
+      }
+
+      return {
+        label: `到達予測 ${formattedTime}`,
+        isPast: false
+      };
     }
 
     // スポットライトスライドの状態管理
@@ -476,7 +520,7 @@
     async function initPortal() {
       updateAdminModalUI();
 
-      // 500分割フェッチを完全廃止し、軽量サマリーJSONのみ並列取得
+      // 軽量サマリーJSONのみ並列取得
       const [rankings, buzzList, newList, milestoneStatus, milestoneHistory] = await Promise.all([
         fetchJsonSafe('logs/rankings.json'),
         fetchJsonSafe('logs/buzz_radar.json'),
@@ -561,18 +605,36 @@
         });
       }
 
-      // スライド4: まもなく大台突破（マイルストーン予測）
+      // スライド4: まもなく大台突破（到達予測時刻ベースで抽出・表示）
+      const nowMs = Date.now();
       const sortedForecast = [...milestoneStatus]
         .filter(m => m.video_id)
-        .sort((a, b) => (a.sort_minutes || 999999) - (b.sort_minutes || 999999));
-      const nextMilestone = sortedForecast.find(m => !usedVideoIds.has(m.video_id)) || sortedForecast[0];
+        .sort((a, b) => {
+          const timeA = parseSafeDate(a.estimated_achieved_at).getTime();
+          const timeB = parseSafeDate(b.estimated_achieved_at).getTime();
+          if (!isNaN(timeA) && !isNaN(timeB)) return timeA - timeB;
+          return (a.sort_minutes || 999999) - (b.sort_minutes || 999999);
+        });
+
+      // 日次バッチで既に予測時刻を過ぎた曲を避け、これから突破する曲を優先選択
+      const upcomingForecast = sortedForecast.filter(m => {
+        const t = parseSafeDate(m.estimated_achieved_at).getTime();
+        return !isNaN(t) && t > nowMs;
+      });
+      const forecastPool = upcomingForecast.length > 0 ? upcomingForecast : sortedForecast;
+      const nextMilestone = forecastPool.find(m => !usedVideoIds.has(m.video_id)) || forecastPool[0];
+
       if (nextMilestone && nextMilestone.video_id) {
         usedVideoIds.add(nextMilestone.video_id);
+        const estimateInfo = formatEstimatedAchievedAt(nextMilestone.estimated_achieved_at);
+        const remainingText = Number(nextMilestone.views_remaining || 0).toLocaleString();
         slides.push({
           videoId: nextMilestone.video_id,
           category: 'マイルストーントラッカー ・ 大台突破予測',
           headline: `「${getTitle(nextMilestone)}」がまもなく${nextMilestone.target_label || '大台'}再生を突破`,
-          subtext: `予測残り ${nextMilestone.days_to_reach || 'まもなく'} ・ あと ${Number(nextMilestone.views_remaining || 0).toLocaleString()} 回`,
+          subtext: estimateInfo.isPast
+            ? estimateInfo.label
+            : `${estimateInfo.label} ・ 集計時あと ${remainingText} 回`,
           ctaText: '予測を見る',
           ctaHref: 'milestone.html?tab=forecast',
           songHref: `song.html?id=${encodeURIComponent(nextMilestone.video_id)}`
@@ -620,8 +682,8 @@
           {
             videoId: '',
             category: 'マイルストーントラッカー',
-            headline: 'ミリオン・1,000万・1億再生までの予測と達成アーカイブ',
-            subtext: '減衰モデルによる到達時刻カウントダウンと過去実績グラフ',
+            headline: 'ミリオン・1,000万・1億再生までの到達予測と達成アーカイブ',
+            subtext: '減衰モデルによる到達予測時刻と過去実績グラフ',
             ctaText: 'マイルストーンを見る',
             ctaHref: 'milestone.html',
             songHref: 'milestone.html'
