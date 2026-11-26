@@ -3,237 +3,889 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ランキング - VocaTracker</title>
+  <title>再生数ランキング - VocaTracker</title>
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://img.youtube.com https://*.firebaseio.com https://*.googleapis.com 'unsafe-inline';">
   <script>
-    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#0f172a', cardbg: '#1e293b' } } } }
+    if (window.tailwind) {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif']
+            },
+            colors: {
+              darkbg: '#0f172a',
+              cardbg: '#1e293b'
+            }
+          }
+        }
+      };
+    }
   </script>
-  <style> body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; } </style>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+    /* index.html / song.html / search.html と完全統一したサイトアイコンバッジ */
+    .app-icon-badge {
+      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
 
-  <!-- Header -->
-  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3">
-    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <a href="index.html" class="flex items-center space-x-2 shrink-0">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-            <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
-          </div>
-          <span class="font-bold text-lg bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent hidden sm:inline">VocaTracker</span>
-        </a>
-        <nav class="hidden sm:flex items-center gap-2 text-xs">
-          <a href="index.html" class="text-slate-400 hover:text-white px-3 py-1.5 rounded-lg transition">ホーム</a>
-          <a href="search.html" class="text-slate-400 hover:text-white px-3 py-1.5 rounded-lg transition">楽曲検索</a>
-          <a href="ranking.html" class="bg-slate-800 text-cyan-400 font-medium px-3 py-1.5 rounded-lg border border-slate-700/60">ランキング</a>
-        </nav>
-      </div>
-
-      <!-- 検索へジャンプする簡易フォーム -->
-      <form action="search.html" method="GET" class="flex-1 max-w-xs hidden md:block">
-        <div class="relative">
-          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input type="text" name="q" placeholder="曲名やP名で検索..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+  <!-- Header (index.html / search.html と完全統一) -->
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur border-b border-slate-800/80 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      <!-- サイトロゴ -->
+      <a href="index.html" class="flex items-center space-x-2.5 group shrink-0">
+        <div class="w-9 h-9 rounded-xl app-icon-badge flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition">
+          <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
         </div>
-      </form>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-sm sm:text-base tracking-wide text-white leading-tight">VocaTracker</span>
+          <span class="text-[10px] text-slate-400 leading-tight hidden sm:block">Vocaloid Analytics Hub</span>
+        </div>
+      </a>
+
+      <!-- PC用ナビゲーション -->
+      <nav class="hidden md:flex items-center space-x-1 text-xs font-semibold">
+        <a href="index.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">ホーム</a>
+        <a href="ranking.html" class="px-3 py-2 rounded-lg text-cyan-400 bg-slate-800/90 border border-slate-700/60">ランキング</a>
+        <a href="featured.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">注目曲トラッカー</a>
+        <a href="milestone.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">マイルストーントラッカー</a>
+        <a href="search.html" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/70 transition">楽曲検索</a>
+      </nav>
+
+      <!-- 右側アクション（検索ショートカット + ハンバーガーメニュー） -->
+      <div class="flex items-center gap-2">
+        <span id="headerAdminBadge" class="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-1 rounded-full">
+          🔓 管理者
+        </span>
+        <a href="search.html" aria-label="楽曲検索" class="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </a>
+        <button onclick="toggleMobileMenu()" id="menuToggleBtn" aria-label="メニューを開く" class="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ハンバーガーメニュー（全コンテンツリンク集約） -->
+    <div id="mobileMenu" class="hidden max-w-6xl mx-auto pt-3 pb-2 border-t border-slate-800/80 mt-3 space-y-1.5">
+      <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">コンテンツ一覧</p>
+      <a href="index.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="home" class="w-4 h-4 text-slate-400 shrink-0"></i>
+        <span>ホーム</span>
+      </a>
+      <a href="ranking.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-cyan-400 bg-slate-800/80 text-sm font-semibold">
+        <i data-lucide="trophy" class="w-4 h-4 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>再生数ランキング</span>
+          <span class="text-[11px] text-slate-400">昨日・週間・月間・累計TOPランキング</span>
+        </div>
+      </a>
+      <a href="featured.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="flame" class="w-4 h-4 text-orange-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>注目曲トラッカー</span>
+          <span class="text-[11px] text-slate-400">バズレーダー・新曲レーダー統合ページ</span>
+        </div>
+      </a>
+      <a href="milestone.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="target" class="w-4 h-4 text-purple-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>マイルストーントラッカー</span>
+          <span class="text-[11px] text-slate-400">大台突破予測・大台達成アーカイブ統合ページ</span>
+        </div>
+      </a>
+      <a href="search.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-slate-800/70 text-sm font-medium transition">
+        <i data-lucide="search" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+        <div class="flex flex-col">
+          <span>楽曲データベース検索</span>
+          <span class="text-[11px] text-slate-400">曲名・ボカロP・タグ・動画IDから検索</span>
+        </div>
+      </a>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
-    
-    <!-- ランキングタイトル ＆ タブ切り替え -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 class="text-lg font-extrabold text-white flex items-center gap-2">
-            <i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i> ボカロ楽曲ランキング
-          </h1>
-          <p id="updateTimeDisplay" class="text-xs text-slate-400 mt-0.5">最終更新: 読み込み中...</p>
-        </div>
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-5">
 
-        <!-- タブボタン -->
-        <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 overflow-x-auto text-xs">
-          <button onclick="switchCategory('yesterday')" id="tab-yesterday" class="px-3 py-1.5 rounded-lg font-medium transition bg-cyan-600 text-white shadow">昨日増加</button>
-          <button onclick="switchCategory('7d')" id="tab-7d" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">週間 (7日)</button>
-          <button onclick="switchCategory('30d')" id="tab-30d" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">月間 (30日)</button>
-          <button onclick="switchCategory('total')" id="tab-total" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">累計再生</button>
-        </div>
+    <!-- 診断・エラー表示バナー -->
+    <div id="errorBanner" class="hidden bg-rose-950/90 border border-rose-500/70 rounded-2xl p-4 space-y-2 shadow-xl">
+      <div class="flex items-center gap-2 text-rose-300 font-bold text-sm">
+        <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
+        <span id="errorBannerTitle">ランキングデータの読み込みに失敗しました</span>
       </div>
+      <p id="errorBannerMessage" class="text-xs text-rose-200 font-mono break-all bg-slate-950/70 p-2.5 rounded-lg border border-rose-900/60"></p>
+      <p id="errorBannerHint" class="text-[11px] text-rose-300/90 leading-relaxed"></p>
     </div>
 
-    <!-- ランキング一覧テーブル -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-300">
-          <thead class="bg-slate-800/60 text-slate-400 uppercase border-b border-slate-800">
-            <tr>
-              <th class="p-3.5 w-16 text-center">順位</th>
-              <th class="p-3.5 w-16 text-center">前日比</th>
-              <th class="p-3.5">楽曲名 / 動画ID</th>
-              <th id="metricHeader" class="p-3.5 text-right">昨日の増加数</th>
-              <th class="p-3.5 text-right">累計再生数</th>
-            </tr>
-          </thead>
-          <tbody id="rankingTableBody" class="divide-y divide-slate-800/80">
-            <tr>
-              <td colspan="5" class="p-8 text-center text-slate-500">
-                <i data-lucide="loader-2" class="w-6 h-6 text-cyan-400 animate-spin mx-auto mb-2"></i>
-                ランキングデータを読み込み中...
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- ランキングタイトル ＆ タブ・絞り込みコントローラー -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+              <i data-lucide="trophy" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h1 class="text-lg sm:text-xl font-extrabold text-white tracking-tight">ボカロ楽曲ランキング</h1>
+              <p id="updateTimeDisplay" class="text-xs text-slate-400 font-mono">最終更新: 読み込み中...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4軸切り替えタブ -->
+        <div class="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar text-xs shrink-0">
+          <button onclick="switchCategory('yesterday')" id="tab-yesterday" class="px-3.5 py-2 rounded-lg font-bold transition whitespace-nowrap bg-cyan-600 text-white shadow">昨日増加</button>
+          <button onclick="switchCategory('7d')" id="tab-7d" class="px-3.5 py-2 rounded-lg font-semibold transition whitespace-nowrap text-slate-400 hover:text-white">週間 (7日)</button>
+          <button onclick="switchCategory('30d')" id="tab-30d" class="px-3.5 py-2 rounded-lg font-semibold transition whitespace-nowrap text-slate-400 hover:text-white">月間 (30日)</button>
+          <button onclick="switchCategory('total')" id="tab-total" class="px-3.5 py-2 rounded-lg font-semibold transition whitespace-nowrap text-slate-400 hover:text-white">累計再生</button>
+        </div>
       </div>
-    </div>
+
+      <!-- ランキング内クイック絞り込み ＆ 件数ステータス -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800/80">
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="filter" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input
+            type="text"
+            id="rankingFilterInput"
+            oninput="renderRanking()"
+            placeholder="このランキング内を曲名・動画IDで絞り込み..."
+            autocomplete="off"
+            class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pl-9 pr-9 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+          >
+          <button
+            type="button"
+            id="clearFilterBtn"
+            onclick="clearRankingFilter()"
+            aria-label="絞り込みをクリア"
+            class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded"
+          >
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div class="flex items-center justify-between sm:justify-end gap-3 text-xs text-slate-400">
+          <span id="categorySubtitle" class="text-[11px] font-semibold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 rounded-full">昨日増加 TOP 100</span>
+          <span id="rankingCountBadge" class="font-mono text-[11px] text-slate-400">---</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ランキング一覧コンテナ（PC: テーブル風グリッド / スマホ: 横スクロール不要の最適化カードリスト） -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <!-- PC用カラムヘッダー -->
+      <div class="hidden md:grid md:grid-cols-12 items-center gap-3 px-5 py-3 bg-slate-800/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+        <div class="col-span-1 text-center">順位</div>
+        <div class="col-span-1 text-center">前日比</div>
+        <div class="col-span-6">楽曲</div>
+        <div id="metricHeaderPrimary" class="col-span-2 text-right">昨日の増加数</div>
+        <div id="metricHeaderSecondary" class="col-span-2 text-right">累計再生数</div>
+      </div>
+
+      <!-- ランキング本体 -->
+      <div id="rankingListContainer" class="divide-y divide-slate-800/80">
+        <div class="p-10 text-center text-slate-500 space-y-2">
+          <i data-lucide="loader-2" class="w-7 h-7 text-cyan-400 animate-spin mx-auto"></i>
+          <p class="text-xs font-medium text-slate-400">ランキングデータを読み込み中...</p>
+        </div>
+      </div>
+    </section>
 
   </main>
 
+  <!-- Footer (index.html / search.html と完全統一) -->
+  <footer class="bg-slate-950 border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-500 space-y-4 mt-10">
+    <div class="flex items-center justify-center gap-2 text-slate-400 font-semibold">
+      <div class="w-6 h-6 rounded-lg app-icon-badge flex items-center justify-center text-white">
+        <i data-lucide="activity" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+      </div>
+      <span>VocaTracker</span>
+    </div>
+    <p>© 2026 VocaTracker. Non-commercial Vocaloid Data Analytics Portal.</p>
+    <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 text-slate-400">
+      <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" class="hover:text-white hover:underline transition">
+        YouTube 利用規約
+      </a>
+      <button onclick="openModal('privacyModal')" class="hover:text-white hover:underline transition">
+        プライバシーポリシー
+      </button>
+      <button onclick="openModal('adminLoginModal')" class="inline-flex items-center gap-1 hover:text-cyan-400 transition">
+        <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+        <span id="footerAdminLabel">管理者ログイン</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- プライバシーポリシー MODAL -->
+  <div id="privacyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[82vh] overflow-y-auto p-6 space-y-4 text-sm text-slate-300 relative shadow-2xl">
+      <button onclick="closeModal('privacyModal')" aria-label="閉じる" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i> プライバシーポリシー
+      </h3>
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <p>当サイト「VocaTracker」は、YouTube Data API サービスを利用して公開動画の統計データ（再生数・高評価数・投稿日時・タイトル等）を取得し、ボーカロイド楽曲のトレンド分析・可視化を行っています。</p>
+        <p>当サイトの利用者は、YouTube 利用規約（<a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" class="text-cyan-400 underline">https://www.youtube.com/t/terms</a>）および Google プライバシーポリシー（<a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-cyan-400 underline">https://policies.google.com/privacy</a>）に同意するものとします。</p>
+        <p>また、サイトの利便性向上とアクセス解析のために Firebase Analytics およびブラウザのローカルストレージ（カスタムタグ・表示設定の保存）を使用する場合があります。個人を特定する情報の収集は行いません。</p>
+      </div>
+      <div class="pt-2 text-right">
+        <button onclick="closeModal('privacyModal')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理者ログイン MODAL -->
+  <div id="adminLoginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 space-y-5 text-sm text-slate-300 relative shadow-2xl">
+      <button onclick="closeModal('adminLoginModal')" aria-label="閉じる" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-5 h-5 text-cyan-400"></i> 管理者ログイン
+        </h3>
+        <p class="text-xs text-slate-400">楽曲情報の編集モードや管理者メニューへアクセスします。</p>
+      </div>
+
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs flex items-center justify-between">
+        <span class="text-slate-400">現在の状態:</span>
+        <span id="adminModalStatusText" class="font-bold text-slate-300">🔒 一般閲覧モード</span>
+      </div>
+
+      <div id="adminLoginFeedback" class="hidden text-xs px-3 py-2 rounded-lg"></div>
+
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="space-y-3">
+        <div class="space-y-1.5">
+          <label for="adminPasscodeInput" class="text-xs font-semibold text-slate-300">管理者パスコード</label>
+          <input
+            type="password"
+            id="adminPasscodeInput"
+            placeholder="パスコードを入力..."
+            autocomplete="current-password"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+          >
+        </div>
+        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow">
+          管理者モードを有効にする
+        </button>
+      </form>
+
+      <div id="adminLoggedInActions" class="hidden space-y-2.5">
+        <a href="admin.html" class="w-full inline-flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 管理者ページへ移動 (admin.html)
+        </a>
+        <button onclick="logoutAdmin()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition">
+          一般閲覧モードに戻る（ログアウト）
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
   <script>
+    // エラー診断バナー
+    function showErrorBanner(message, hint = '', title = 'ランキングデータの読み込みに失敗しました') {
+      const banner = document.getElementById('errorBanner');
+      const titleEl = document.getElementById('errorBannerTitle');
+      const msgEl = document.getElementById('errorBannerMessage');
+      const hintEl = document.getElementById('errorBannerHint');
+      if (banner && msgEl) {
+        if (titleEl) titleEl.innerText = title;
+        msgEl.innerText = message;
+        if (hintEl) hintEl.innerText = hint;
+        banner.classList.remove('hidden');
+      }
+    }
+
+    function hideErrorBanner() {
+      const banner = document.getElementById('errorBanner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    // 安全な localStorage ヘルパー
+    function safeGetStorage(key, fallback = null) {
+      try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn('localStorage保存スキップ:', e);
+      }
+    }
+
+    function safeGetJSON(key, fallback = {}) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return parsed !== null ? parsed : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    function normalizeSearchText(str) {
+      if (!str) return '';
+      return String(str)
+        .toLowerCase()
+        .replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60))
+        .replace(/[Ａ-Ｚａ-ｚ０-９！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        .replace(/\u3000/g, ' ');
+    }
+
+    /**
+     * BigQueryの時刻文字列（JST値がUTC表記になっている前提）をそのまま日本時間 (+09:00) として安全に解釈
+     */
+    function parseSafeDate(rawDate) {
+      if (!rawDate) return new Date(NaN);
+      if (rawDate instanceof Date) return rawDate;
+      const str = String(rawDate).trim();
+      const match = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (match) {
+        const [, y, m, d, hh = '00', mm = '00', ss = '00'] = match;
+        const pad = (v) => String(v).padStart(2, '0');
+        return new Date(`${y}-${pad(m)}-${pad(d)}T${pad(hh)}:${pad(mm)}:${pad(ss)}+09:00`);
+      }
+      return new Date(str);
+    }
+
+    function formatShortDate(rawDate) {
+      const d = parseSafeDate(rawDate);
+      if (isNaN(d.getTime())) return String(rawDate || '');
+      const parts = new Intl.DateTimeFormat('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(d);
+      const getPart = (type) => (parts.find(p => p.type === type) || {}).value || '';
+      return `${getPart('year')}/${getPart('month')}/${getPart('day')} ${getPart('hour')}:${getPart('minute')}`;
+    }
+
+    // カテゴリ設定マップ
+    const CATEGORY_CONFIG = {
+      yesterday: {
+        label: '昨日増加',
+        rankKey: 'rank_yesterday',
+        changeKey: 'rank_change_yesterday',
+        primaryKey: 'increase_yesterday',
+        primaryHeader: '昨日の増加数',
+        primaryPrefix: '+',
+        secondaryKey: 'total_views',
+        secondaryHeader: '累計再生数',
+        secondaryPrefix: '',
+        secondaryMobileLabel: '累計'
+      },
+      '7d': {
+        label: '週間 (7日)',
+        rankKey: 'rank_7d',
+        changeKey: 'rank_change_7d',
+        primaryKey: 'increase_7d',
+        primaryHeader: '週間増加数 (7日)',
+        primaryPrefix: '+',
+        secondaryKey: 'total_views',
+        secondaryHeader: '累計再生数',
+        secondaryPrefix: '',
+        secondaryMobileLabel: '累計'
+      },
+      '30d': {
+        label: '月間 (30日)',
+        rankKey: 'rank_30d',
+        changeKey: 'rank_change_30d',
+        primaryKey: 'increase_30d',
+        primaryHeader: '月間増加数 (30日)',
+        primaryPrefix: '+',
+        secondaryKey: 'total_views',
+        secondaryHeader: '累計再生数',
+        secondaryPrefix: '',
+        secondaryMobileLabel: '累計'
+      },
+      total: {
+        label: '累計再生',
+        rankKey: 'rank_total',
+        changeKey: 'rank_change_total',
+        primaryKey: 'total_views',
+        primaryHeader: '累計再生数',
+        primaryPrefix: '',
+        secondaryKey: 'increase_yesterday',
+        secondaryHeader: '昨日の増加数',
+        secondaryPrefix: '+',
+        secondaryMobileLabel: '昨日'
+      }
+    };
+
     let rankingData = [];
-    let currentCategory = 'yesterday'; // 'yesterday' | '7d' | '30d' | 'total'
+    let currentCategory = 'yesterday';
 
     async function initRankingPage() {
+      updateAdminModalUI();
+
+      // URLパラメータ (?tab=7d 等) に対応
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = (urlParams.get('tab') || '').trim();
+      if (CATEGORY_CONFIG[tabParam]) {
+        currentCategory = tabParam;
+      }
+      updateTabStyles();
+
+      const targetUrl = new URL('logs/rankings.json', window.location.href).href;
+
       try {
-        // 🌟 BigQueryから出力されたサマリーJSONを取得 (例: rankings.json)
-        const response = await fetch('rankings.json');
-        if (response.ok) {
-          rankingData = await response.json();
-        } else {
-          throw new Error('ランキングデータが見つかりません');
+        const res = await fetch(`${targetUrl}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} - 取得先URL: ${targetUrl}`);
         }
+        const data = await res.json();
+        rankingData = Array.isArray(data) ? data : [];
+        hideErrorBanner();
       } catch (err) {
-        console.error(err);
+        console.error('ランキング読み込みエラー:', err);
         rankingData = [];
+        showErrorBanner(
+          err.message,
+          'logs/rankings.json の取得に失敗しました。GitHub Actions (BQ to GitHub Export) で logs/rankings.json が生成されているか確認してください。'
+        );
       }
 
       renderRanking();
     }
 
     function switchCategory(category) {
+      if (!CATEGORY_CONFIG[category]) return;
       currentCategory = category;
-      
-      // タブの見た目アクティブ切り替え
-      ['yesterday', '7d', '30d', 'total'].forEach(cat => {
-        const btn = document.getElementById(`tab-${cat}`);
-        if (cat === category) {
-          btn.className = "px-3 py-1.5 rounded-lg font-medium transition bg-cyan-600 text-white shadow";
-        } else {
-          btn.className = "px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white";
-        }
-      });
 
+      try {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('tab', category);
+        window.history.replaceState({}, '', nextUrl.toString());
+      } catch (e) {}
+
+      updateTabStyles();
       renderRanking();
     }
 
+    function updateTabStyles() {
+      Object.keys(CATEGORY_CONFIG).forEach(cat => {
+        const btn = document.getElementById(`tab-${cat}`);
+        if (!btn) return;
+        if (cat === currentCategory) {
+          btn.className = 'px-3.5 py-2 rounded-lg font-bold transition whitespace-nowrap bg-cyan-600 text-white shadow';
+        } else {
+          btn.className = 'px-3.5 py-2 rounded-lg font-semibold transition whitespace-nowrap text-slate-400 hover:text-white';
+        }
+      });
+    }
+
+    function clearRankingFilter() {
+      const input = document.getElementById('rankingFilterInput');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      renderRanking();
+    }
+
+    /**
+     * 前日比バッジを安全に生成（文字列・数値どちらの形式にも対応）
+     */
+    function buildChangeBadgeHTML(rawChange) {
+      if (rawChange === null || rawChange === undefined || rawChange === '' || rawChange === '=' || rawChange === 0 || rawChange === '0') {
+        return `<span class="text-slate-500 font-mono text-[11px]">—</span>`;
+      }
+
+      const str = String(rawChange).trim();
+      const upper = str.toUpperCase();
+
+      if (upper === 'NEW' || str === '圏外' || str === '初登場') {
+        return `<span class="inline-flex items-center justify-center text-purple-300 font-bold text-[10px] bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded">NEW</span>`;
+      }
+
+      if (str.startsWith('+') || str.startsWith('↑') || (!isNaN(Number(str)) && Number(str) > 0)) {
+        const label = (!isNaN(Number(str)) && !str.startsWith('+')) ? `+${str}` : str;
+        return `<span class="inline-flex items-center justify-center text-emerald-400 font-bold text-[11px] font-mono">${escapeHTML(label)}</span>`;
+      }
+
+      if (str.startsWith('-') || str.startsWith('↓') || (!isNaN(Number(str)) && Number(str) < 0)) {
+        return `<span class="inline-flex items-center justify-center text-rose-400 font-bold text-[11px] font-mono">${escapeHTML(str)}</span>`;
+      }
+
+      return `<span class="text-slate-400 text-[11px] font-mono">${escapeHTML(str)}</span>`;
+    }
+
+    /**
+     * 順位バッジのスタイルを決定（1〜3位はメダルカラー）
+     */
+    function buildRankBadgeHTML(rank) {
+      if (rank === 1) {
+        return `<span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-300 font-black text-sm shadow-sm">1</span>`;
+      }
+      if (rank === 2) {
+        return `<span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-300/15 border border-slate-300/40 text-slate-200 font-black text-sm">2</span>`;
+      }
+      if (rank === 3) {
+        return `<span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500/15 border border-orange-500/40 text-orange-300 font-black text-sm">3</span>`;
+      }
+      return `<span class="inline-flex items-center justify-center w-8 h-8 text-slate-300 font-extrabold text-sm font-mono">${rank}</span>`;
+    }
+
     function renderRanking() {
-      const tbody = document.getElementById('rankingTableBody');
-      const metricHeader = document.getElementById('metricHeader');
+      const container = document.getElementById('rankingListContainer');
+      const cfg = CATEGORY_CONFIG[currentCategory];
+
+      document.getElementById('metricHeaderPrimary').innerText = cfg.primaryHeader;
+      document.getElementById('metricHeaderSecondary').innerText = cfg.secondaryHeader;
+      document.getElementById('categorySubtitle').innerText = `${cfg.label} TOP 100`;
+
+      const filterInput = document.getElementById('rankingFilterInput');
+      const clearBtn = document.getElementById('clearFilterBtn');
+      const rawFilter = filterInput ? filterInput.value.trim() : '';
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', rawFilter.length === 0);
+      }
 
       if (!rankingData || rankingData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">ランキングデータがありません。データのエクスポートをお待ちください。</td></tr>`;
+        document.getElementById('rankingCountBadge').innerText = '0 件';
+        document.getElementById('updateTimeDisplay').innerText = '最終更新: データ未取得';
+        container.innerHTML = `
+          <div class="p-10 text-center text-slate-500 space-y-2">
+            <i data-lucide="bar-chart-3" class="w-8 h-8 text-slate-600 mx-auto"></i>
+            <p class="text-sm font-medium text-slate-400">ランキングデータがありません。</p>
+            <p class="text-xs text-slate-500">BigQueryからのエクスポート完了後に自動で表示されます。</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
         return;
       }
 
-      // カテゴリに応じたソートキーと順位キーの割り当て
-      let rankKey, changeKey, valueKey, headerText;
-      if (currentCategory === 'yesterday') {
-        rankKey = 'rank_yesterday';
-        changeKey = 'rank_change_yesterday';
-        valueKey = 'increase_yesterday';
-        headerText = '昨日の増加数';
-      } else if (currentCategory === '7d') {
-        rankKey = 'rank_7d';
-        changeKey = 'rank_change_7d';
-        valueKey = 'increase_7d';
-        headerText = '週間増加数 (7日)';
-      } else if (currentCategory === '30d') {
-        rankKey = 'rank_30d';
-        changeKey = 'rank_change_30d';
-        valueKey = 'increase_30d';
-        headerText = '月間増加数 (30日)';
-      } else {
-        rankKey = 'rank_total';
-        changeKey = 'rank_change_total';
-        valueKey = 'total_views';
-        headerText = '累計再生数';
+      // 該当カテゴリの順位で100位以内を抽出＆ソート
+      let rankedList = rankingData
+        .filter(item => {
+          const r = Number(item[cfg.rankKey]);
+          return item && item.video_id && !isNaN(r) && r > 0 && r <= 100;
+        })
+        .sort((a, b) => Number(a[cfg.rankKey]) - Number(b[cfg.rankKey]));
+
+      // 万が一順位カラムが欠損していた場合は値降順でフォールバック
+      if (rankedList.length === 0) {
+        rankedList = [...rankingData]
+          .filter(item => item && item.video_id)
+          .sort((a, b) => (Number(b[cfg.primaryKey]) || 0) - (Number(a[cfg.primaryKey]) || 0))
+          .slice(0, 100);
       }
 
-      metricHeader.innerText = headerText;
-
-      // 該当の順位でソート（100位以内）
-      const sorted = [...rankingData]
-        .filter(item => item[rankKey] && item[rankKey] <= 100)
-        .sort((a, b) => a[rankKey] - b[rankKey]);
-
-      if (sorted.length > 0 && sorted[0].updated_at) {
-        document.getElementById('updateTimeDisplay').innerText = `最終更新: ${formatDateTime(sorted[0].updated_at)}`;
+      // 最終更新時刻を反映
+      const latestItemWithDate = rankedList.find(item => item.updated_at) || rankingData.find(item => item.updated_at);
+      if (latestItemWithDate && latestItemWithDate.updated_at) {
+        document.getElementById('updateTimeDisplay').innerText = `最終更新: ${formatShortDate(latestItemWithDate.updated_at)}`;
       }
 
-      const customTitles = JSON.parse(localStorage.getItem('voca_custom_titles')) || {};
+      const customTitles = safeGetJSON('voca_custom_titles', {});
+      const customProducers = safeGetJSON('voca_custom_producers', {});
 
-      tbody.innerHTML = sorted.map(item => {
-        const rank = item[rankKey];
-        const change = item[changeKey] || '=';
+      // クイック絞り込み適用
+      const filterTokens = normalizeSearchText(rawFilter).split(/\s+/).filter(Boolean);
+      const visibleList = filterTokens.length === 0
+        ? rankedList
+        : rankedList.filter(item => {
+            const title = customTitles[item.video_id] || item.title || '';
+            const producer = customProducers[item.video_id] || item.producer || '';
+            const target = normalizeSearchText(`${title} ${producer} ${item.video_id}`);
+            return filterTokens.every(token => target.includes(token));
+          });
+
+      document.getElementById('rankingCountBadge').innerText =
+        filterTokens.length > 0
+          ? `${visibleList.length} / ${rankedList.length} 曲表示`
+          : `${rankedList.length} 曲`;
+
+      if (visibleList.length === 0) {
+        container.innerHTML = `
+          <div class="p-10 text-center text-slate-500 space-y-2">
+            <i data-lucide="search-x" class="w-7 h-7 text-slate-500 mx-auto"></i>
+            <p class="text-sm font-medium text-slate-400">「${escapeHTML(rawFilter)}」に一致する楽曲がランキング内に見つかりません。</p>
+            <button onclick="clearRankingFilter()" class="mt-2 inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
+              絞り込みを解除する
+            </button>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = visibleList.map((item, idx) => {
+        const rank = Number(item[cfg.rankKey]) || (idx + 1);
         const displayTitle = customTitles[item.video_id] || item.title || `動画ID: ${item.video_id}`;
-        const val = item[valueKey] || 0;
-        const totalViews = item.total_views || 0;
+        const displayProducer = customProducers[item.video_id] || item.producer || '';
+        const primaryVal = Number(item[cfg.primaryKey]) || 0;
+        const secondaryVal = Number(item[cfg.secondaryKey]) || 0;
+        const songUrl = `song.html?id=${encodeURIComponent(item.video_id)}`;
+        const thumbUrl = `https://img.youtube.com/vi/${encodeURIComponent(item.video_id)}/mqdefault.jpg`;
 
-        // 順位バッジの色分け
-        let rankBadgeClass = 'text-slate-300 font-bold';
-        if (rank === 1) rankBadgeClass = 'text-amber-400 font-black text-sm bg-amber-400/10 px-2 py-0.5 rounded';
-        else if (rank === 2) rankBadgeClass = 'text-slate-200 font-black text-sm bg-slate-300/10 px-2 py-0.5 rounded';
-        else if (rank === 3) rankBadgeClass = 'text-amber-600 font-black text-sm bg-amber-600/10 px-2 py-0.5 rounded';
+        const rankBadgeHtml = buildRankBadgeHTML(rank);
+        const changeBadgeHtml = buildChangeBadgeHTML(item[cfg.changeKey]);
 
-        // 順位変動バッジの色分け
-        let changeBadge = `<span class="text-slate-500">=</span>`;
-        if (change === 'NEW') {
-          changeBadge = `<span class="text-purple-400 font-bold text-[10px] bg-purple-500/10 px-1.5 py-0.5 rounded">NEW</span>`;
-        } else if (change.startsWith('+')) {
-          changeBadge = `<span class="text-emerald-400 font-medium text-[10px]">${change}</span>`;
-        } else if (change !== '=') {
-          changeBadge = `<span class="text-rose-400 font-medium text-[10px]">${change}</span>`;
-        }
+        const primaryText = `${cfg.primaryPrefix}${primaryVal.toLocaleString()}`;
+        const secondaryText = `${cfg.secondaryPrefix}${secondaryVal.toLocaleString()}`;
+
+        const topRowHighlight = rank === 1
+          ? 'bg-gradient-to-r from-amber-500/[0.07] via-transparent to-transparent'
+          : (rank === 2
+            ? 'bg-gradient-to-r from-slate-300/[0.05] via-transparent to-transparent'
+            : (rank === 3 ? 'bg-gradient-to-r from-orange-500/[0.06] via-transparent to-transparent' : ''));
+
+        const primaryColorClass = currentCategory === 'total' ? 'text-white' : 'text-cyan-400';
+        const secondaryColorClass = currentCategory === 'total' ? 'text-emerald-400' : 'text-slate-300';
 
         return `
-          <tr class="hover:bg-slate-800/40 transition">
-            <td class="p-3.5 text-center"><span class="${rankBadgeClass}">${rank}</span></td>
-            <td class="p-3.5 text-center">${changeBadge}</td>
-            <td class="p-3.5">
-              <a href="song.html?id=${item.video_id}" class="font-bold text-white hover:text-cyan-400 transition line-clamp-1 block">
-                ${escapeHTML(displayTitle)}
-              </a>
-              <span class="text-[10px] text-slate-500 font-mono">ID: ${item.video_id}</span>
-            </td>
-            <td class="p-3.5 text-right font-medium text-cyan-400">+${val.toLocaleString()}</td>
-            <td class="p-3.5 text-right text-slate-300">${totalViews.toLocaleString()}</td>
-          </tr>
+          <a href="${songUrl}" class="block px-3.5 py-3 md:px-5 md:py-3.5 hover:bg-slate-800/50 transition group ${topRowHighlight}">
+            <!-- PC表示 (md以上: 12カラムグリッド) -->
+            <div class="hidden md:grid md:grid-cols-12 items-center gap-3">
+              <div class="col-span-1 flex justify-center">${rankBadgeHtml}</div>
+              <div class="col-span-1 flex justify-center">${changeBadgeHtml}</div>
+              <div class="col-span-6 flex items-center gap-3.5 min-w-0">
+                <div class="w-20 aspect-video rounded-lg overflow-hidden bg-slate-800 border border-slate-700/60 shrink-0">
+                  <img
+                    src="${thumbUrl}"
+                    loading="lazy"
+                    onerror="this.onerror=null;this.src='https://placehold.co/160x90/1e293b/94a3b8?text=Voca';"
+                    alt="${escapeHTML(displayTitle)}"
+                    class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  >
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-sm text-white group-hover:text-cyan-400 transition truncate">
+                    ${escapeHTML(displayTitle)}
+                  </p>
+                  <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                    ${displayProducer ? `<span class="text-slate-400 truncate max-w-[180px]">${escapeHTML(displayProducer)}</span><span>・</span>` : ''}
+                    <span class="font-mono">ID: ${escapeHTML(item.video_id)}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-span-2 text-right font-extrabold text-sm font-mono ${primaryColorClass}">
+                ${primaryText}
+              </div>
+              <div class="col-span-2 text-right text-xs font-semibold font-mono ${secondaryColorClass}">
+                ${secondaryText}
+              </div>
+            </div>
+
+            <!-- スマホ表示 (md未満: 横スクロール不要のすっきり縦積みレイアウト) -->
+            <div class="flex md:hidden items-center gap-3">
+              <!-- 左：順位＋前日比 -->
+              <div class="w-9 shrink-0 flex flex-col items-center justify-center gap-1">
+                ${rankBadgeHtml}
+                <div>${changeBadgeHtml}</div>
+              </div>
+
+              <!-- 中：サムネイル -->
+              <div class="w-20 aspect-video rounded-lg overflow-hidden bg-slate-800 border border-slate-700/60 shrink-0">
+                <img
+                  src="${thumbUrl}"
+                  loading="lazy"
+                  onerror="this.onerror=null;this.src='https://placehold.co/160x90/1e293b/94a3b8?text=Voca';"
+                  alt="${escapeHTML(displayTitle)}"
+                  class="w-full h-full object-cover"
+                >
+              </div>
+
+              <!-- 右：曲名＋指標 -->
+              <div class="min-w-0 flex-1 space-y-1">
+                <p class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-400 transition line-clamp-2 leading-snug">
+                  ${escapeHTML(displayTitle)}
+                </p>
+                <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                  <span class="font-extrabold text-xs sm:text-sm font-mono ${primaryColorClass}">
+                    ${primaryText}
+                  </span>
+                  <span class="text-[10px] font-mono text-slate-400">
+                    ${cfg.secondaryMobileLabel} <span class="${secondaryColorClass}">${secondaryText}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </a>
         `;
       }).join('');
 
-      lucide.createIcons();
+      if (window.lucide) {
+        lucide.createIcons();
+      }
     }
 
-    function formatDateTime(rawDate) {
-      const d = new Date(rawDate);
-      if (isNaN(d.getTime())) return rawDate;
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const hh = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
+    // メニュー・モーダル・管理者モード管理（index.html / search.html と共通）
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      if (menu) menu.classList.toggle('hidden');
     }
 
-    function escapeHTML(str) {
-      if (!str) return '';
-      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    function openModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) {
+        el.classList.remove('hidden');
+        if (modalId === 'adminLoginModal') updateAdminModalUI();
+      }
     }
 
-    window.onload = initRankingPage;
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.add('hidden');
+    }
+
+    ['privacyModal', 'adminLoginModal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          if (e.target === el) closeModal(id);
+        });
+      }
+    });
+
+    function updateAdminModalUI() {
+      const isAdmin = safeGetStorage('voca_admin_mode', 'false') === 'true';
+      const statusText = document.getElementById('adminModalStatusText');
+      const formEl = document.getElementById('adminLoginForm');
+      const actionsEl = document.getElementById('adminLoggedInActions');
+      const footerLabel = document.getElementById('footerAdminLabel');
+      const headerBadge = document.getElementById('headerAdminBadge');
+      const feedbackEl = document.getElementById('adminLoginFeedback');
+
+      if (feedbackEl) feedbackEl.classList.add('hidden');
+
+      if (isAdmin) {
+        if (statusText) {
+          statusText.innerText = '🔓 管理者モード（ログイン中）';
+          statusText.className = 'font-bold text-cyan-400';
+        }
+        if (formEl) formEl.classList.add('hidden');
+        if (actionsEl) actionsEl.classList.remove('hidden');
+        if (footerLabel) footerLabel.innerText = '管理者メニュー (ログイン中)';
+        if (headerBadge) headerBadge.classList.remove('hidden');
+      } else {
+        if (statusText) {
+          statusText.innerText = '🔒 一般閲覧モード';
+          statusText.className = 'font-bold text-slate-400';
+        }
+        if (formEl) formEl.classList.remove('hidden');
+        if (actionsEl) actionsEl.classList.add('hidden');
+        if (footerLabel) footerLabel.innerText = '管理者ログイン';
+        if (headerBadge) headerBadge.classList.add('hidden');
+      }
+    }
+
+    function handleAdminLogin(event) {
+      event.preventDefault();
+      const input = document.getElementById('adminPasscodeInput');
+      const feedbackEl = document.getElementById('adminLoginFeedback');
+      const val = (input ? input.value : '').trim();
+
+      if (!val) {
+        if (feedbackEl) {
+          feedbackEl.innerText = 'パスコードを入力してください。';
+          feedbackEl.className = 'text-xs px-3 py-2 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30';
+          feedbackEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      safeSetStorage('voca_admin_mode', 'true');
+      if (input) input.value = '';
+      updateAdminModalUI();
+
+      if (feedbackEl) {
+        feedbackEl.innerText = '管理者モードを有効にしました。';
+        feedbackEl.className = 'text-xs px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        feedbackEl.classList.remove('hidden');
+      }
+    }
+
+    function logoutAdmin() {
+      safeSetStorage('voca_admin_mode', 'false');
+      updateAdminModalUI();
+    }
+
+    function bootApp() {
+      if (window.lucide) lucide.createIcons();
+      initRankingPage();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootApp);
+    } else {
+      bootApp();
+    }
+  </script>
+
+  <!-- Firebase Analytics（安全な非同期初期化） -->
+  <script type="module">
+    async function initFirebase() {
+      try {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js");
+        const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js");
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBFxeCvbpyj0_skQ5O7ZjGQz5EJ5YvQEmw",
+          authDomain: "vocaloid-song-trackar.firebaseapp.com",
+          projectId: "youtube-vocaloid-song-trackar",
+          storageBucket: "youtube-vocaloid-song-trackar.firebasestorage.app",
+          messagingSenderId: "543125801305",
+          appId: "1:543125801305:web:7556f46309f798105f6448",
+          measurementId: "G-L6NMKP7QQQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        getAnalytics(app);
+      } catch (e) {
+        console.warn("Firebase初期化スキップ:", e);
+      }
+    }
+    initFirebase();
   </script>
 </body>
 </html>
