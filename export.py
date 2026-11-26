@@ -98,11 +98,13 @@ def main():
 
     print("🚀 [VocaTracker Export] GitHub Actions バッチ処理を開始します...")
 
-    # 1. ランキングサマリー (ranking.html 用)
+    # 1. ランキングサマリー (ranking.html 用 / 30日ランキング廃止版)
     query_rankings = f"""
-        SELECT video_id, title, total_views, increase_yesterday, increase_7d, increase_30d,
-               rank_total, rank_yesterday, rank_7d, rank_30d,
-               rank_change_total, rank_change_yesterday, rank_change_7d, rank_change_30d, updated_at
+        SELECT video_id, title, channel_title, vocals,
+               total_views, increase_today, increase_yesterday, increase_7d,
+               rank_total, rank_today, rank_yesterday, rank_7d,
+               rank_change_total, rank_change_today, rank_change_yesterday, rank_change_7d,
+               updated_at
         FROM `{PROJECT_ID}.{DATASET_ID}.t_rankings_summary`
     """
     export_table_to_single_json(client, query_rankings, "rankings.json", "ランキングサマリー")
@@ -117,8 +119,9 @@ def main():
 
     # 3. 新曲レーダー (newrelease.html / 注目の楽曲ページ用)
     query_new_release = f"""
-        SELECT video_id, title, display_title, current_views, current_likes,
-               video_age_days, total_like_rate_pct, new_release_category, updated_at
+        SELECT video_id, title, display_title, channel_title, vocals,
+               current_views, current_likes, video_age_days, total_like_rate_pct,
+               new_release_category, updated_at
         FROM `{PROJECT_ID}.{DATASET_ID}.t_new_release_radar`
     """
     export_table_to_single_json(client, query_new_release, "new_release.json", "新曲レーダー")
